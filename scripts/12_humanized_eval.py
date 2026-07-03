@@ -209,23 +209,26 @@ def main():
     df = pd.read_parquet(feat_path)
     print(f"Loaded {len(df)} texts from corpus_features.parquet")
 
-    # We need raw text — check if it's in the features parquet
-    if 'text' not in df.columns:
-        raw_path = os.path.join(DATA_DIR, 'corpus_raw.parquet')
-        if os.path.exists(raw_path):
-            df_raw = pd.read_parquet(raw_path)
-            df = df.merge(df_raw[['text']], left_index=True, right_index=True, how='left')
-        else:
-            print("ERROR: Need raw text for humanization. corpus_raw.parquet not found.")
-            return
+    # We need raw text for humanization — load from raw parquet
+    raw_path = os.path.join(DATA_DIR, 'corpus_raw.parquet')
+    if not os.path.exists(raw_path):
+        print("ERROR: Need raw text for humanization. corpus_raw.parquet not found.")
+        return
 
-    # Sample AI texts
-    ai_df = df[df['label'] == 1].dropna(subset=['text']).sample(
-        min(2000, len(df[df['label'] == 1])), random_state=RANDOM_SEED
-    )
+    # Load only text + label from raw corpus (columnar read is fast)
+    print("Loading text from raw corpus...")
+    df_raw = pd.read_parquet(raw_path, columns=['text', 'label'])
+
+    # Sample AI texts from raw corpus (we re-extract features after humanization)
+    ai_available = df_raw[df_raw['label'] == 1].dropna(subset=['text'])
+    ai_df = ai_available.sample(min(2000, len(ai_available)), random_state=RANDOM_SEED)
+
+    # Sample human texts from features parquet (use pre-computed features)
     human_df = df[df['label'] == 0].dropna(subset=FEATURE_COLS).sample(
         min(2000, len(df[df['label'] == 0])), random_state=RANDOM_SEED
     )
+
+    del df_raw
 
     print(f"AI texts: {len(ai_df)}, Human texts: {len(human_df)}")
 

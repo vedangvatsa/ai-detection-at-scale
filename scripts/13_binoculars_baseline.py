@@ -107,26 +107,17 @@ def compute_binoculars_score(text, observer_tokenizer, performer_tokenizer,
 def main():
     args = parse_args()
 
-    # Load data
-    feat_path = os.path.join(DATA_DIR, 'corpus_features.parquet')
+    # Load data — sample from raw corpus, extract features on the fly
     raw_path = os.path.join(DATA_DIR, 'corpus_raw.parquet')
 
-    if not os.path.exists(feat_path) or not os.path.exists(raw_path):
-        print("ERROR: Need both corpus_features.parquet and corpus_raw.parquet")
+    if not os.path.exists(raw_path):
+        print("ERROR: Need corpus_raw.parquet")
         return
 
-    df_feat = pd.read_parquet(feat_path)
-    df_raw = pd.read_parquet(raw_path)
-
-    # Merge to get text alongside features
-    df = df_feat.copy()
-    df['text'] = df_raw['text'].values[:len(df_feat)] if len(df_raw) >= len(df_feat) else None
-
-    if 'text' not in df.columns or df['text'].isna().all():
-        print("ERROR: Could not merge text from raw corpus.")
-        return
-
-    df = df.dropna(subset=['text', 'label'] + FEATURE_COLS)
+    # Load only needed columns from raw corpus
+    print("Loading corpus (text, label, register only)...")
+    df = pd.read_parquet(raw_path, columns=['text', 'label', 'register'])
+    df = df.dropna(subset=['text'])
 
     # Sample
     ai_df = df[df['label'] == 1].sample(min(args.max_texts, len(df[df['label'] == 1])), random_state=42)

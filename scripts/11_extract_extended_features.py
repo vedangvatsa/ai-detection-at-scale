@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Extract all 31 features (original 11 + extended 20) from corpus_raw.parquet.
-Trains a new Random Forest on the 31-feature set and compares to the 11-feature baseline.
+Uses multiprocessing for parallel extraction. Trains and compares to 11-feature baseline.
 
 Outputs:
   data/corpus_features_31.parquet
@@ -15,6 +15,7 @@ import time
 import joblib
 import numpy as np
 import pandas as pd
+from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold
@@ -34,6 +35,20 @@ from tool.feature_extractor import (
 )
 
 RANDOM_SEED = 42
+N_WORKERS = max(1, cpu_count() - 1)
+
+
+def _extract_one(args):
+    """Worker function: extract 31 features from a single text."""
+    text, label, register, model, source = args
+    feats = extract_features(text, extended=True)
+    if feats is None:
+        return None
+    feats['label'] = label
+    feats['register'] = register
+    feats['model'] = model
+    feats['source'] = source
+    return feats
 
 
 def main():
@@ -43,23 +58,28 @@ def main():
         print(f"ERROR: {in_path} not found. Run 01_fetch_data.py first.")
         return
 
-    df = pd.read_parquet(in_path)
+    df = pd.read_parquet(in_path, columns=['text', 'label', 'register', 'model', 'source'])
     print(f"Loaded {len(df)} texts from corpus_raw.parquet")
 
-    # Extract 31 features
-    print("Extracting 31 features per text...")
+    # Extract 31 features with multiprocessing
+    print(f"Extracting 31 features per text using {N_WORKERS} workers...")
+    args_list = list(zip(
+        df['text'].values,
+        df['label'].values,
+        df['register'].values,
+        df.get('model', pd.Series([''] * len(df))).values,
+        df.get('source', pd.Series([''] * len(df))).values,
+    ))
+
     feature_rows = []
     failed = 0
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Extracting 31 features"):
-        feats = extract_features(row['text'], extended=True)
-        if feats is None:
-            failed += 1
-            continue
-        feats['label'] = row['label']
-        feats['register'] = row['register']
-        feats['model'] = row.get('model', '')
-        feats['source'] = row.get('source', '')
-        feature_rows.append(feats)
+    with Pool(N_WORKERS) as pool:
+        for result in tqdm(pool.imap_unordered(_extract_one, args_list, chunksize=500),
+                           total=len(args_list), desc="Extracting 31 features"):
+            if result is None:
+                failed += 1
+            else:
+                feature_rows.append(result)
 
     print(f"  Extracted: {len(feature_rows)}, Failed: {failed}")
     feat_df = pd.DataFrame(feature_rows)
