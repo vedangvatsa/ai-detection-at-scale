@@ -1,0 +1,45 @@
+register,error_type,score,text
+academic,FP,0.89,"Wednesday NHL lockout seems inevitable After failing to make any progress toward a new collective bargaining agreement, the NHL owners and players agreed on one point: A lockout seems inevitable."
+academic,FP,0.59,Yankees are left with double vision John Buck hit a three-run homer and Angel Berroa had two hits and scored twice in a 10-run fifth inning that carried the Kansas City Royals to a 17-8 rout of the New York Yankees last night.
+academic,FP,0.55,"Surcharge Raises Ire When Northwest Airlines Corp. said last week it will charge extra fees for tickets not bought on its Web site, it caused a chain reaction in an industry still grappling with the impact of the Internet."
+news,FP,0.68,"The common ling (Molva molva), also known as the white ling or simply the ling, is a large member of the family Lotidae, a group of cod-like fishes. It resembles the related rocklings, but it is much larger and has a single barbel. This species is unrelated to the pink ling, Genypterus blacodes, from the Southern Hemisphere. The common ling is found in the northern Atlantic, mainly off Europe, and..."
+news,FP,0.51,"**Depression** I meditate on the annals of my universe and ponder on its direction. For five years I descended alongside a fabricated golden parallel universe identical to mine ( in all but one way ). It was golden because I dreamed the image of my late lover. I yearned to feel the golden lie ( just one ) as it beckoned to me ever so sweetly. Shackled by sorrow, I embraced the unrelenting abyss in..."
+news,FP,0.68,"Storm rallies around Jackson in first playoff win MINNEAPOLIS - Black strips of electrical tape adorned players #39; wrists, forearms and jerseys. Lauren Jackson wore hers around her left biceps."
+news,FN,0.44,"Τhе Wеlsh gоvеrnmеnt hаs аnnоunсеd сuts tо fundіng fоr unіvеrsіtу studеnts іn Wаlеs, whісh соuld lеаd tо аn іnсrеаsе іn tuіtіоn fееs аnd rеduсеd suрроrt fоr thоsе frоm dіsаdvаntаgеd bасkgrоunds.
+
+Τhе сhаngеs wіll sее thе аmоunt оf mоnеу аvаіlаblе fоr studеnt grаnts аnd bursаrіеs rеduсе bу £10 mіllіоn оvеr thе nехt twо уеаrs. Τhіs іs lіkеlу tо rеsult іn hіghеr tuіtіоn fееs fоr mаnу studеnts, аs unі..."
+news,FN,0.4,"In a bid to challenge the might of Hollywood, online gaming giant Electronic Arts (EA) plans to make its own movies and TV shows.
+
+Chief executive Andrew Wilson said the move will help the firm diversify its business.
+
+Mr Wilson said EA, which makes games such as Fifa and Madden NFL, had the ""talent and technology"" to compete with major studios.
+
+The company has already made some forays into makin..."
+news,FN,0.32,"The Bank of England is expected to keep interest rates on hold at its upcoming meeting, according to economists. This decision comes amid ongoing uncertainty about the UK's economic recovery from the Covid-19 pandemic.
+
+The Monetary Policy Committee (MPC), which sets interest rates, is due to announce its decision on Thursday. The consensus among economists is that the Bank will maintain the base ..."
+social,FP,0.55,"The Semtex President Every few years — sometimes four, sometimes eight — America’s political mood swings from one pole to another. It’s a not"
+social,FP,0.55,"DMO ( Dish Machine Operator ) That's my official title. Everybody just calls me kitchen-bitch though, at least I think they do. My translator implant's a piece of shit. Being the first human most of these xenos have seen, they could call me a lot worse. But they seem a little wary around me. Most Xenos are descended from lizards or bugs. Two legs and to arms seems to be pretty standard for intelli..."
+social,FP,0.84,"Cassini takes a close-up look at Saturn #39;s giant moon Titan PASADENA, Calif. - The theory that Saturn #39;s giant moon Titan has oceans or seas of liquid methane and ethane faced its best test yet Tuesday."
+social,FN,0.22,"- Hello, I don't know if this is the right place to write this, but I really hope someone can help me with this. I've recently started to have weird, involuntary movements and sounds. They're not constant, but it's often enough that they notice and it's actually quite disturbing. It's as if I suddenly want to blink a lot, nod my head or make cracking noises with my mouth. I haven't had anything li..."
+social,FN,0.48,"Surе, hеrе's а роssіblе Rеddіt роst:
+
+Ηеу Rеddіt,
+
+Ι'vе bееn thіnkіng а lоt аbоut lоvе аnd rеlаtіоnshірs lаtеlу, аnd Ι'vе соmе tо а rеаlіzаtіоn - а lоvе stоrу thаt rеmаіns dуsfunсtіоnаl іs mоrе сарtіvаtіng.
+
+Ι knоw, І knоw, іt sоunds strаngе. Wе'rе соndіtіоnеd tо bеlіеvе thаt lоvе shоuld bе thіs реrfесt, rоmаntісіzеd thіng, whеrе twо реорlе соmе tоgеthеr аnd lіvе hарріlу еvеr аftеr. Вut lеt's bе r..."
+social,FN,0.44,"M​a​n​c​h​e​s​t​e​r​ ​C​i​t​y​ ​h​a​v​e​ ​b​e​e​n​ ​d​e​a​l​t​ ​a​ ​b​l​o​w​ ​a​f​t​e​r​ ​d​e​f​e​n​d​e​r​ ​M​i​c​a​h​ ​R​i​c​h​a​r​d​s​ ​w​a​s​ ​r​u​l​e​d​ ​o​u​t​ ​f​o​r​ ​u​p​ ​t​o​ ​s​i​x​ ​w​e​e​k​s​ ​w​i​t​h​ ​a​ ​k​n​e​e​ ​i​n​j​u​r​y​.​
+​
+​T​h​e​ ​E​n​g​l​a​n​d​ ​i​n​t​e​r​n​a​t​i​o​n​a​l​,​ ​w​h​o​ ​h​a​s​ ​b​e​e​n​ ​s​i​d​e​l​i​n​e​d​ ​s​i​n​c​e​ ​t​h​e​ ​o​p​e​n​i​n​g​ ​d​a​y​ ​o​f​ ​t​..."
+creative,FP,0.64,Monty Hailed as Hero of Stunning Ryder Victory  LONDON (Reuters) - When Colin Montgomerie's final putt  plopped into the cup of the 18th green at Oakland Hills on  Sunday it clinched a remarkable Ryder Cup triumph and soothed  the Scot's personal anguish.
+creative,FP,0.97,"Thatcher: It was just handbags with Becks, not aggro BEN THATCHER was last night playing down what appeared to be a running battle between him and David Beckham on Saturday - at least as far as the England captain was concerned."
+creative,FP,0.95,"using keck laser guide star adaptive optics imaging , we have found that the t9  dwarf wise  j1217 + 1626  and t8  dwarf wise  j1711 + 3500  are exceptional binaries , with unusually wide separations ( @xmath00.8 , 815  au ) , large near - ir flux ratios ( @xmath023  mags ) , and small mass ratios ( @xmath00.5 ) compared to previously known field ultracool binaries . 
+ keck / nirspec @xmath1-band ..."
+creative,FN,0.42,"On his birthday, a boy receives a set of 25 toy soldiers and arrays them on a table top. One soldier stands on a single leg, having been the last one Cast from an old tin spoon. Nearby, he spies a paper Ballerina with a spangle on her sash. She too is standing on one leg and the soldier falls in love. That night, a goblin among the toys angrily Warns the soldier to Take his eyes off the ballerina,..."
+creative,FN,0.33,"From the epitome of the novel ‘De Praetistigiis’: The novel tells the story of a young woman named Praetis who has grown up in a little town in the country. Praetis is a woman of great intellect and unwavering will, and her knowledge of her own subject is such that she is eventually admitted to a prestigious university in the city. At first she is dazzled by the fast life in the city, and by the m..."
+creative,FN,0.49,"In ""Outbreak"", the protagonist, Dr. Ava Lee, a renowned infectious disease specialist, is summoned to a small town in Utah to investigate a mysterious outbreak of a new strain of influenza. 
+
+Upon her arrival, she discovers that the virus is spreading rapidly and the local healthcare system is overwhelmed. 
+
+Working alongside a team of experts, Dr. Lee races against time to identify the source of ..."

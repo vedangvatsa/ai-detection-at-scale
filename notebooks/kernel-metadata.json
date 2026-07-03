@@ -1,0 +1,13 @@
+{
+  "id": "vedangvatsa123/ai-detection-binoculars-benchmark",
+  "title": "AI Detection Binoculars Benchmark",
+  "code_file": "kaggle_binoculars_only.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
