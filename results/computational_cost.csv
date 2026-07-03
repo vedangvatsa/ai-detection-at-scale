@@ -1,0 +1,5 @@
+method,time_per_1000_texts_ms,throughput_texts_per_sec
+RF (100 trees) inference,19.60218906402588,51014.710486351214
+LR inference,0.05273103713989258,18964163.31328842
+"Feature extraction (11 features, single core)",10000.0,100.0
+"Binoculars (neural, GPU, est.)",2000000.0,0.5

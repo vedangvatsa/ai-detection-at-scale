@@ -1,0 +1,31 @@
+{
+  "register_classifier": "register_classifier.joblib",
+  "detectors": {
+    "academic": "detector_academic.joblib",
+    "news": "detector_news.joblib",
+    "social": "detector_social.joblib",
+    "creative": "detector_creative.joblib"
+  },
+  "all_register_detector": "detector_all.joblib",
+  "homoglyph_normalizer": "homoglyph_normalizer.joblib",
+  "feature_cols": [
+    "mtld",
+    "sent_cv",
+    "self_mention_density",
+    "opener_ratio",
+    "connector_density",
+    "hedge_density",
+    "mean_sent_len",
+    "boost_density",
+    "char_entropy",
+    "rep_rate",
+    "punct_entropy"
+  ],
+  "registers": [
+    "academic",
+    "news",
+    "social",
+    "creative"
+  ],
+  "random_seed": 42
+}

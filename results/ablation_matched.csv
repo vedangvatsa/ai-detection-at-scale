@@ -1,0 +1,6 @@
+n_features,features_used,auc_mean,auc_sd
+1,sent_cv,0.7886285182993423,0.0007599819030255385
+2,"sent_cv, char_entropy",0.8342409352979597,0.0004618633748696382
+4,"sent_cv, char_entropy, hedge_density, connector_density",0.8936446147908775,0.0010517381656407884
+6,"sent_cv, char_entropy, hedge_density, connector_density, opener_ratio, mean_sent_len",0.9173325528192319,0.0008142853777569563
+11,"sent_cv, char_entropy, hedge_density, connector_density, opener_ratio, mean_sent_len, mtld, boost_density, self_mention_density, rep_rate, punct_entropy",0.9599525039218179,0.00034942441785130464

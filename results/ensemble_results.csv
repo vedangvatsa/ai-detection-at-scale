@@ -1,0 +1,17 @@
+evaluation,train_register,test_register,auc_mean,auc_sd,acc_mean,f1_mean
+within_register,academic,academic,0.9782817559625159,0.0015881524743271314,0.9474658880849326,0.8061858354238518
+within_register,news,news,0.976611785,0.00112015167177037,0.92211,0.9233879107940386
+within_register,social,social,0.933322005,0.0015859382515659448,0.8609199999999999,0.85754656561221
+within_register,creative,creative,0.973160071,0.0006628338009063628,0.91737,0.9179773416186725
+ensemble_hard_routing,ensemble,academic,1.0,0.0,1.0,1.0
+ensemble_soft_weighting,ensemble,academic,0.9999997075392544,0.0,0.9997086197144474,0.9989817310572028
+ensemble_hard_routing,ensemble,news,1.0,0.0,1.0,1.0
+ensemble_soft_weighting,ensemble,news,0.9999976586,0.0,0.99922,0.9992201403747325
+ensemble_hard_routing,ensemble,social,1.0,0.0,1.0,1.0
+ensemble_soft_weighting,ensemble,social,0.9999937983999999,0.0,0.99854,0.9985391819418875
+ensemble_hard_routing,ensemble,creative,1.0,0.0,1.0,1.0
+ensemble_soft_weighting,ensemble,creative,0.9999943214,0.0,0.99875,0.9987505372689743
+all_register_detector,all,academic,1.0,0.0,1.0,1.0
+all_register_detector,all,news,1.0,0.0,1.0,1.0
+all_register_detector,all,social,1.0,0.0,1.0,1.0
+all_register_detector,all,creative,1.0,0.0,1.0,1.0

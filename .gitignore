@@ -1,0 +1,43 @@
+# Data files (too large for git — download via scripts/01_fetch_data.py)
+data/
+*.parquet
+
+# Trained models (too large for git — train via scripts/09_ensemble_and_defense.py)
+models/*.joblib
+
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# LaTeX build artifacts
+latex_build/*.aux
+latex_build/*.log
+latex_build/*.out
+latex_build/*.toc
+latex_build/*.bbl
+latex_build/*.blg
+latex_build/*.fdb_latexmk
+latex_build/*.fls
+latex_build/*.synctex.gz
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.env.local

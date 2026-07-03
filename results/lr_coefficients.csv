@@ -1,0 +1,12 @@
+feature,feature_label,lr_coefficient,abs_coefficient
+mtld,Lexical Diversity (MTLD),4.463988490663245,4.463988490663245
+char_entropy,Char N-gram Entropy,-0.8559546522858937,0.8559546522858937
+sent_cv,Sentence Length CV,-0.5671765615295464,0.5671765615295464
+opener_ratio,Sentence-Opener Connector Ratio,0.4151666683864694,0.4151666683864694
+hedge_density,Hedge Density,0.29252816465002957,0.29252816465002957
+punct_entropy,Punctuation Entropy,-0.1194720123998545,0.1194720123998545
+boost_density,Booster Density,-0.10934097886034734,0.10934097886034734
+mean_sent_len,Mean Sentence Length,-0.10711743238528172,0.10711743238528172
+self_mention_density,Self-Mention Density,0.07308151356691006,0.07308151356691006
+rep_rate,Word Repetition Rate,0.06705770964867513,0.06705770964867513
+connector_density,Connector Density,0.03215925843778897,0.03215925843778897
