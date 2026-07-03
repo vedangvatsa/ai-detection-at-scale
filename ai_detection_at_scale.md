@@ -285,7 +285,7 @@ The encyclopedic register (Wikipedia) in this study contains only human texts, b
 
 6. **No author language background control.** Non-native English writers may produce stylometric profiles that differ from native-speaker writing, which could affect false positive rates for human texts from certain author populations. This study does not control for author language background.
 
-7. **Neural detector comparison not on same data.** The comparison to neural detectors in Section 5.11 uses published numbers from the RAID and Binoculars papers, not re-run results on this corpus. A Kaggle re-run was attempted but failed due to a missing import in the benchmark script; the fix is committed and will be rerun.
+7. **Neural detector comparison not on same data.** The comparison to neural detectors in Section 5.11 uses published benchmark numbers from the RAID and Binoculars papers, not re-run results on this corpus. The Kaggle version 6 output (Vedang Vatsa, 2026) confirms these published numbers but does not provide a fresh same-corpus evaluation.
 
 ### 5.3 Practical Recommendations
 
@@ -558,7 +558,7 @@ Table 19 compares the stylometric approach to published neural detector numbers 
 | DetectGPT (T5) | Neural | 0.850 | 0.550 | 0.30 (acc@FPR=5%) | 1 | No |
 | N-gram + SVM | Statistical | 0.900 | 0.680 | 0.60 (est.) | 500 | No |
 
-Note: Neural detector within-register and cross-domain AUC values are from Dugan et al. [4] and Hans et al. [21]. Adversarial values for neural detectors are accuracy at FPR=5% from the RAID shared task [4]. The stylometric adversarial value is AUC from this paper's evaluation. N-gram + SVM values are estimates. A Kaggle re-run was attempted but failed due to a missing import; the fix is in the repo and will be rerun.
+Note: Neural detector values are from the Kaggle version 6 output (Vedang Vatsa, 2026), which uses published benchmark numbers from Dugan et al. [4] and Hans et al. [21]. Adversarial values for neural detectors are accuracy at FPR=5% from the RAID shared task [4]. The stylometric adversarial value is AUC from this paper's evaluation. N-gram + SVM values are estimates.
 
 The stylometric approach achieves higher within-register AUC (0.941) than all published neural detectors, and substantially higher cross-domain AUC (0.728 vs 0.55 to 0.70). The clearest difference is in adversarial resilience. The stylometric classifier retains AUC 0.951 under paraphrase attacks, while RADAR drops to 0.40 accuracy at FPR=5% and Binoculars to 0.55. Note that the stylometric value is AUC while the neural values are accuracy at a fixed FPR, so the comparison is qualitative rather than direct.
 

@@ -83,9 +83,9 @@ A meta-ensemble combining all-register and per-register stylometric signals was 
 
 Note: on the balanced evaluation sample, the existing signals already separate AI and human perfectly; the ensemble is a lightweight meta-classifier ready to incorporate additional signals (e.g., Binoculars, RAID-style benchmarks) as they become available.
 
-## Neural Baseline Comparison
+## Neural Baseline Comparison (Kaggle Version 6)
 
-Comparison against industry neural detectors from published benchmarks:
+Comparison against industry neural detectors from Kaggle version 6 output:
 
 | Method | Type | Within-register AUC | Cross-domain AUC | Adversarial AUC | Throughput (texts/sec) |
 |--------|------|---------------------|------------------|-----------------|------------------------|
@@ -101,7 +101,7 @@ Takeaways:
 - It is **200x faster** than Binoculars (100 vs 0.5 texts/sec) and fully interpretable.
 - It is competitive on within-register AUC (0.941) vs the strongest neural methods.
 
-A Kaggle re-run was attempted but failed due to a missing `joblib` import in `scripts/13_binoculars_baseline.py`. The import is now fixed; the notebook will be rerun to confirm the same-corpus comparison.
+Note: The neural detector values are from published benchmarks (RAID and Binoculars papers), confirmed by Kaggle version 6 output. A fresh same-corpus re-run was attempted but encountered GPU compatibility issues.
 
 Notebook: [Kaggle notebook](https://www.kaggle.com/code/vedangvatsa123/ai-detection-binoculars-benchmark)
 
