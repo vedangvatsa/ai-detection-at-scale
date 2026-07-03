@@ -70,6 +70,12 @@ def compute_binoculars_score(text, observer_tokenizer, performer_tokenizer,
 
     text = text[:4000]  # Truncate to avoid OOM
 
+    # GPT2 tokenizer has no pad_token by default
+    if observer_tokenizer.pad_token is None:
+        observer_tokenizer.pad_token = observer_tokenizer.eos_token
+    if performer_tokenizer.pad_token is None:
+        performer_tokenizer.pad_token = performer_tokenizer.eos_token
+
     enc = observer_tokenizer(
         text, return_tensors='pt', truncation=True, max_length=max_tokens,
         padding=True, return_attention_mask=True,
