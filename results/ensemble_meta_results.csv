@@ -1,0 +1,5 @@
+method,auc,n_signals,auc_std
+stylo_all,1.0,1,
+stylo_reg,1.0,1,
+stylo_31,0.9999999341934913,1,
+meta_ensemble,1.0,2,4.965068306494546e-17

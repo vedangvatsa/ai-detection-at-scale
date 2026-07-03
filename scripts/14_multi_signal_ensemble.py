@@ -100,13 +100,13 @@ def main():
 
     # Signal 2: Per-register stylometric (register-aware ensemble)
     stylo_reg_proba = np.zeros(len(df_sample))
-    for i, (_, row) in enumerate(df_sample.iterrows()):
-        reg = row['register']
+    df_reset = df_sample.reset_index(drop=True)
+    for reg, idx in df_reset.groupby('register').groups.items():
+        idx_arr = list(idx)
         if reg in detectors:
-            proba = detectors[reg].predict_proba(X_orig[i:i+1])[0, 1]
+            stylo_reg_proba[idx_arr] = detectors[reg].predict_proba(X_orig[idx_arr])[:, 1]
         else:
-            proba = stylo_all_proba[i]
-        stylo_reg_proba[i] = proba
+            stylo_reg_proba[idx_arr] = stylo_all_proba[idx_arr]
     stylo_reg_auc = roc_auc_score(y, stylo_reg_proba)
     print(f"  Stylometric (register-aware): AUC={stylo_reg_auc:.4f}")
 
@@ -115,13 +115,22 @@ def main():
     if detector_31 is not None:
         feat_31_path = os.path.join(DATA_DIR, 'corpus_features_31.parquet')
         if os.path.exists(feat_31_path):
+            # Sample from 31-feature parquet with same strategy
             df_31 = pd.read_parquet(feat_31_path)
-            df_31_sample = df_31[df_31.index.isin(df_sample.index)]
-            if len(df_31_sample) == len(df_sample) and all(c in df_31_sample.columns for c in ALL_FEATURE_COLS):
-                X_31 = df_31_sample[ALL_FEATURE_COLS].values
-                stylo_31_proba = detector_31.predict_proba(X_31)[:, 1]
-                stylo_31_auc = roc_auc_score(y, stylo_31_proba)
-                print(f"  Stylometric (31-feature): AUC={stylo_31_auc:.4f}")
+            df_31 = df_31.dropna(subset=ALL_FEATURE_COLS)
+            parts_31 = []
+            for (reg, lab), grp in df_31.groupby(['register', 'label']):
+                if len(grp) > max_per_group:
+                    parts_31.append(grp.sample(max_per_group, random_state=RANDOM_SEED))
+                else:
+                    parts_31.append(grp)
+            df_31_sample = pd.concat(parts_31).sample(frac=1, random_state=RANDOM_SEED)
+
+            X_31 = df_31_sample[ALL_FEATURE_COLS].values
+            y_31 = df_31_sample['label'].values
+            stylo_31_proba = detector_31.predict_proba(X_31)[:, 1]
+            stylo_31_auc = roc_auc_score(y_31, stylo_31_proba)
+            print(f"  Stylometric (31-feature): AUC={stylo_31_auc:.4f} (n={len(df_31_sample)}, separate sample)")
 
     # Signal 4: Binoculars (if available)
     bino_scores = None
@@ -134,14 +143,12 @@ def main():
             print(f"  Binoculars: AUC={bino_auc:.4f}")
 
     # ── Build meta-features ────────────────────────────────────────────────
+    # Only combine signals computed on the same sample
     meta_features = [stylo_all_proba, stylo_reg_proba]
     meta_names = ['stylo_all', 'stylo_reg']
 
-    if stylo_31_proba is not None:
-        meta_features.append(stylo_31_proba)
-        meta_names.append('stylo_31')
-
-    if bino_scores is not None:
+    # 31-feature and Binoculars are from separate samples — report standalone only
+    if bino_scores is not None and len(bino_scores) == len(y):
         meta_features.append(bino_scores)
         meta_names.append('binoculars')
 
