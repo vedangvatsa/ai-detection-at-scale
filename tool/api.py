@@ -20,8 +20,12 @@ import time
 import json
 import joblib
 import numpy as np
+import hashlib
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from tool.feature_extractor import (
@@ -30,6 +34,11 @@ from tool.feature_extractor import (
     ORIGINAL_FEATURE_COLS,
     ALL_FEATURE_COLS,
 )
+
+# New module imports
+from tool.neural_detector import compute_perplexity_and_burstiness
+from tool.sentence_analyzer import analyze_sentences
+from tool.attribution import attribute_source
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 
@@ -111,6 +120,10 @@ class DetectResponse(BaseModel):
     is_ai: bool = Field(..., description="Binary classification at 0.5 threshold")
     features: Optional[dict] = Field(None, description="Extracted feature values (if return_features=True)")
     processing_time_ms: float = Field(..., description="Processing time in milliseconds")
+    sentences: Optional[List[dict]] = Field(None, description="Sentence-level highlight heatmap")
+    neural_signals: Optional[dict] = Field(None, description="Neural signals including perplexity and burstiness")
+    model_attribution: Optional[dict] = Field(None, description="Predicted model source and confidence")
+    is_calibrated: bool = Field(True, description="True if output probability is calibrated")
 
 
 class BatchDetectRequest(BaseModel):
@@ -138,6 +151,23 @@ app = FastAPI(
     description="Stylometric AI text detection with register-aware ensemble routing.",
     version="1.0.0",
 )
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for dev/web client integration
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files
+STATIC_DIR = os.path.join(SCRIPT_DIR, 'static')
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+@app.get("/")
+def read_root():
+    return FileResponse(os.path.join(STATIC_DIR, 'index.html'))
 
 _models = None
 
@@ -181,8 +211,58 @@ def features():
     }
 
 
+# ── In-Memory Cache and Rate Limiting ──────────────────────────────────────
+
+RESPONSE_CACHE = {}  # key (hash) -> dict
+
+def get_cache_key(text: str, register: Optional[str]) -> str:
+    raw_key = f"{text}||{register or ''}"
+    return hashlib.md5(raw_key.encode('utf-8')).hexdigest()
+
+def set_cache(key: str, data: dict):
+    if len(RESPONSE_CACHE) > 1000:
+        first_key = next(iter(RESPONSE_CACHE))
+        RESPONSE_CACHE.pop(first_key)
+    RESPONSE_CACHE[key] = data
+
+RATE_LIMITS = {}  # ip -> {"tokens": float, "last_updated": float}
+
+def check_rate_limit(ip: str) -> bool:
+    now = time.time()
+    limit = 60.0  # max tokens
+    refill_rate = 1.0  # 1 token per second
+    
+    if ip not in RATE_LIMITS:
+        RATE_LIMITS[ip] = {"tokens": limit, "last_updated": now}
+        return True
+        
+    state = RATE_LIMITS[ip]
+    elapsed = now - state["last_updated"]
+    tokens = min(limit, state["tokens"] + elapsed * refill_rate)
+    
+    if tokens < 1.0:
+        return False
+        
+    RATE_LIMITS[ip] = {"tokens": tokens - 1.0, "last_updated": now}
+    return True
+
+
+# ── Endpoints ──────────────────────────────────────────────────────────────
+
 @app.post("/detect", response_model=DetectResponse)
-def detect(req: DetectRequest):
+def detect(req: DetectRequest, request: Request):
+    # Rate Limiting
+    ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(ip):
+        raise HTTPException(status_code=429, detail="Too many requests. Limit: 60 req/min.")
+        
+    # Caching
+    cache_key = get_cache_key(req.text, req.register)
+    if cache_key in RESPONSE_CACHE:
+        cached = RESPONSE_CACHE[cache_key].copy()
+        cached["processing_time_ms"] = 0.0
+        return cached
+
     m = get_models()
     t0 = time.time()
 
@@ -235,7 +315,16 @@ def detect(req: DetectRequest):
     ai_label_idx = list(classes).index(1) if 1 in classes else 1
     ai_probability = float(ai_proba[ai_label_idx])
 
-    # Step 5: Build response
+    # Step 5: Sentence-level analysis
+    sentences_data = analyze_sentences(text, detector, feature_cols=m['feature_cols'])
+
+    # Step 6: Neural perplexity & burstiness
+    neural_signals = compute_perplexity_and_burstiness(text)
+
+    # Step 7: Model Attribution
+    attribution = attribute_source(feat_vector, ai_probability)
+
+    # Step 8: Build response
     elapsed_ms = (time.time() - t0) * 1000
 
     features_dict = None
@@ -243,14 +332,21 @@ def detect(req: DetectRequest):
         feats = extract_feature_vector(text, feature_cols=m['feature_cols'], extended=False)
         features_dict = dict(zip(m['feature_cols'], feats)) if feats else None
 
-    return DetectResponse(
-        ai_probability=ai_probability,
-        register=register,
-        register_confidence=register_confidence,
-        is_ai=ai_probability >= 0.5,
-        features=features_dict,
-        processing_time_ms=round(elapsed_ms, 2),
-    )
+    res = {
+        "ai_probability": ai_probability,
+        "register": register,
+        "register_confidence": register_confidence,
+        "is_ai": ai_probability >= 0.5,
+        "features": features_dict,
+        "processing_time_ms": round(elapsed_ms, 2),
+        "sentences": sentences_data,
+        "neural_signals": neural_signals,
+        "model_attribution": attribution,
+        "is_calibrated": True
+    }
+    
+    set_cache(cache_key, res)
+    return res
 
 
 @app.post("/detect/batch", response_model=BatchDetectResponse)

@@ -176,7 +176,7 @@ def compute_mtld(words):
 
 # ── Original 11 features ──────────────────────────────────────────────────
 
-def _extract_original_features(text, words, sents):
+def _extract_original_features(text, words, sents, lang='en'):
     n_words = len(words)
     n_sents = len(sents)
     words_per_1000 = n_words / 1000.0
@@ -191,32 +191,46 @@ def _extract_original_features(text, words, sents):
     else:
         sent_cv = 0.0
 
-    mtld = compute_mtld(words)
+    mtld_val = compute_mtld(words)
+    mtld = 0.0 if np.isnan(mtld_val) else mtld_val
 
-    self_count = sum(1 for w in words if w in SELF_MENTION_WORDS)
+    if lang == 'en' or lang == 'unknown':
+        hedge_words = HEDGE_WORDS
+        booster_words = BOOSTER_WORDS
+        connector_words = CONNECTOR_WORDS
+        self_mention_words = SELF_MENTION_WORDS
+    else:
+        from tool.multilingual import get_word_lists
+        wlist = get_word_lists(lang)
+        hedge_words = wlist.get('hedge', HEDGE_WORDS)
+        booster_words = wlist.get('booster', BOOSTER_WORDS)
+        connector_words = wlist.get('connector', CONNECTOR_WORDS)
+        self_mention_words = wlist.get('self_mention', SELF_MENTION_WORDS)
+
+    self_count = sum(1 for w in words if w in self_mention_words)
     self_density = self_count / max(words_per_1000, 0.001)
 
     text_lower = text.lower()
     conn_count = 0
-    for cw in CONNECTOR_WORDS:
+    for cw in connector_words:
         conn_count += len(re.findall(r'\b' + re.escape(cw) + r'\b', text_lower))
     conn_density = conn_count / max(words_per_1000, 0.001)
 
     opener_count = 0
     for s in sents:
         s_lower = s.lower().strip()
-        for cw in CONNECTOR_WORDS:
+        for cw in connector_words:
             if s_lower.startswith(cw + ' ') or s_lower.startswith(cw + ','):
                 opener_count += 1
                 break
     opener_ratio = opener_count / max(n_sents, 1)
 
-    hedge_count = sum(1 for w in words if w in HEDGE_WORDS)
+    hedge_count = sum(1 for w in words if w in hedge_words)
     for mw in ['appear to', 'seem to', 'likely to', 'for example', 'for instance']:
         hedge_count += len(re.findall(r'\b' + re.escape(mw) + r'\b', text_lower))
     hedge_density = hedge_count / max(words_per_1000, 0.001)
 
-    boost_count = sum(1 for w in words if w in BOOSTER_WORDS)
+    boost_count = sum(1 for w in words if w in booster_words)
     boost_density = boost_count / max(words_per_1000, 0.001)
 
     chars = re.sub(r'\s+', ' ', text.lower())
@@ -366,6 +380,39 @@ def _extract_extended_features(text, words, sents, orig):
     feats['url_email_density'] = url_email_density
     feats['quote_density'] = quote_density
 
+    # ── Vocabulary richness (4 features) ──
+    content_words = orig['content_words']
+    if content_words:
+        word_freq = Counter(content_words)
+        n_words = len(content_words)
+        n_types = len(word_freq)
+        
+        # Type-token ratio
+        feats['type_token_ratio'] = n_types / max(n_words, 1)
+        
+        # Hapax legomena ratio (words appearing exactly once)
+        hapax_count = sum(1 for c in word_freq.values() if c == 1)
+        feats['hapax_legomena_ratio'] = hapax_count / max(n_words, 1)
+        
+        # Yule's K (lexical diversity)
+        if n_words > 0:
+            m1 = sum(c for c in word_freq.values())
+            m2 = sum(c * c for c in word_freq.values())
+            feats['yules_k'] = 10000 * (m2 - m1) / (m1 * m1) if m1 > 0 else 0.0
+        else:
+            feats['yules_k'] = 0.0
+        
+        # Simpson's D (lexical diversity)
+        if n_words > 1:
+            feats['simpsons_d'] = 1 - sum((c / n_words) ** 2 for c in word_freq.values())
+        else:
+            feats['simpsons_d'] = 0.0
+    else:
+        feats['type_token_ratio'] = 0.0
+        feats['hapax_legomena_ratio'] = 0.0
+        feats['yules_k'] = 0.0
+        feats['simpsons_d'] = 0.0
+
     return feats
 
 
@@ -385,6 +432,7 @@ EXTENDED_FEATURE_COLS = [
     'adjective_density', 'adverb_density', 'nominalization_density',
     'capitalized_entity_density', 'number_density', 'acronym_density',
     'url_email_density', 'quote_density',
+    'type_token_ratio', 'hapax_legomena_ratio', 'yules_k', 'simpsons_d',
 ]
 
 ALL_FEATURE_COLS = ORIGINAL_FEATURE_COLS + EXTENDED_FEATURE_COLS
@@ -394,12 +442,13 @@ def normalize_unicode(text):
     return unicodedata.normalize('NFKC', text)
 
 
-def extract_features(text, extended=True):
+def extract_features(text, extended=True, lang=None):
     """Extract stylometric features from a single text.
 
     Args:
         text: Input text string.
         extended: If True, extract all 31 features. If False, only original 11.
+        lang: Language override (e.g. 'en', 'fr'). If None, dynamically detected.
 
     Returns:
         Dict of feature name -> float value, or None if text is too short.
@@ -409,12 +458,16 @@ def extract_features(text, extended=True):
 
     text = normalize_unicode(text)
     words = tokenize_words(text)
-    if len(words) < 20:
+    if len(words) < 5:
         return None
+
+    if lang is None:
+        from tool.multilingual import detect_language
+        lang = detect_language(text)
 
     sents = tokenize_sentences(text)
 
-    orig = _extract_original_features(text, words, sents)
+    orig = _extract_original_features(text, words, sents, lang=lang)
     if orig is None:
         return None
 
@@ -427,13 +480,14 @@ def extract_features(text, extended=True):
     return result
 
 
-def extract_feature_vector(text, feature_cols=None, extended=True):
+def extract_feature_vector(text, feature_cols=None, extended=True, lang=None):
     """Extract features as an ordered list matching feature_cols.
 
     Args:
         text: Input text string.
         feature_cols: List of feature names to extract. If None, uses all.
         extended: Whether to compute extended features.
+        lang: Language override. If None, dynamically detected.
 
     Returns:
         List of float values in the same order as feature_cols, or None.
@@ -441,7 +495,7 @@ def extract_feature_vector(text, feature_cols=None, extended=True):
     if feature_cols is None:
         feature_cols = ALL_FEATURE_COLS if extended else ORIGINAL_FEATURE_COLS
 
-    feats = extract_features(text, extended=extended)
+    feats = extract_features(text, extended=extended, lang=lang)
     if feats is None:
         return None
     return [feats.get(c, 0.0) for c in feature_cols]

@@ -1,12 +1,12 @@
 {
-  "id": "vedangvatsa123/ai-detection-binoculars-benchmark",
-  "title": "AI Detection Binoculars Benchmark",
-  "code_file": "kaggle_binoculars_results_only.ipynb",
+  "id": "vedangvatsa123/ai-detection-beemo-benchmark-v3",
+  "title": "AI Detection: Beemo Benchmark V3",
+  "code_file": "kaggle_beemo.ipynb",
   "language": "python",
   "kernel_type": "notebook",
-  "is_private": true,
-  "enable_gpu": true,
-  "enable_internet": true,
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_internet": "true",
   "dataset_sources": [],
   "competition_sources": [],
   "kernel_sources": []
