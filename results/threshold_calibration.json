@@ -1,0 +1,30 @@
+{
+  "academic": {
+    "threshold": 0.92,
+    "target_fpr": 0.001,
+    "tpr": 0.5408126573175117,
+    "n_human": 498065,
+    "n_ai": 8343
+  },
+  "news": {
+    "threshold": 0.98,
+    "target_fpr": 0.001,
+    "tpr": 0.3816337813080266,
+    "n_human": 346636,
+    "n_ai": 403371
+  },
+  "social": {
+    "threshold": 0.975,
+    "target_fpr": 0.001,
+    "tpr": 0.3116057405668745,
+    "n_human": 407923,
+    "n_ai": 462254
+  },
+  "creative": {
+    "threshold": 0.975,
+    "target_fpr": 0.001,
+    "tpr": 0.38067688943506706,
+    "n_human": 102749,
+    "n_ai": 442672
+  }
+}
