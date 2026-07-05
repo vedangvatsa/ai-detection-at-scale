@@ -39,6 +39,8 @@ from tool.feature_extractor import (
 from tool.neural_detector import compute_perplexity_and_burstiness
 from tool.sentence_analyzer import analyze_sentences
 from tool.attribution import attribute_source
+from tool.adversarial_defense import normalize_text_defensive
+from tool.calibration import calibrate_probability
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 
@@ -275,8 +277,8 @@ def detect(req: DetectRequest, request: Request):
     m = get_models()
     t0 = time.time()
 
-    # Step 1: Unicode normalization
-    text = normalize_unicode(req.text)
+    # Step 1: Adversarial character normalization
+    text = normalize_text_defensive(req.text)
 
     # Step 2: Feature extraction (using model's feature cols)
     feat_vector = extract_feature_vector(text, feature_cols=m['feature_cols'], extended=False)
@@ -310,7 +312,15 @@ def detect(req: DetectRequest, request: Request):
             register = 'all'
             register_confidence = None
 
-    # Step 4: Per-register detection
+    # Step 4: Per-register detection / Hybrid ensembler
+    if register in m['detectors']:
+        detector = m['detectors'][register]
+    elif 'all_detector' in m:
+        detector = m['all_detector']
+        register = 'all'
+    else:
+        detector = None
+
     ai_probability = None
     if m.get('hybrid_available'):
         try:
@@ -320,21 +330,19 @@ def detect(req: DetectRequest, request: Request):
             print(f"Error executing hybrid prediction: {e}. Falling back to standard classifier.")
 
     if ai_probability is None:
-        if register in m['detectors']:
-            detector = m['detectors'][register]
-        elif 'all_detector' in m:
-            detector = m['all_detector']
-            register = 'all'
-        else:
+        if detector is None:
             raise HTTPException(status_code=500, detail="No detector available.")
-
         ai_proba = detector.predict_proba(X)[0]
         classes = detector.classes_
         ai_label_idx = list(classes).index(1) if 1 in classes else 1
         ai_probability = float(ai_proba[ai_label_idx])
 
+    # Calibration: adjust based on word count to prevent short-text false positives
+    word_count = len(text.split())
+    ai_probability = calibrate_probability(ai_probability, word_count)
+
     # Step 5: Sentence-level analysis
-    sentences_data = analyze_sentences(text, detector, feature_cols=m['feature_cols'])
+    sentences_data = analyze_sentences(text, detector, feature_cols=m['feature_cols']) if detector is not None else []
 
     # Step 6: Neural perplexity & burstiness
     neural_signals = compute_perplexity_and_burstiness(text)
@@ -377,7 +385,7 @@ def detect_batch(req: BatchDetectRequest):
 
     results = []
     for text in req.texts:
-        text_norm = normalize_unicode(text)
+        text_norm = normalize_text_defensive(text)
         feat_vector = extract_feature_vector(text_norm, feature_cols=m['feature_cols'], extended=False)
         if feat_vector is None:
             results.append(DetectResponse(
@@ -428,6 +436,10 @@ def detect_batch(req: BatchDetectRequest):
             classes = detector.classes_
             ai_label_idx = list(classes).index(1) if 1 in classes else 1
             ai_probability = float(ai_proba[ai_label_idx])
+
+        # Calibration: adjust based on word count
+        word_count = len(text_norm.split())
+        ai_probability = calibrate_probability(ai_probability, word_count)
 
         results.append(DetectResponse(
             ai_probability=ai_probability,
