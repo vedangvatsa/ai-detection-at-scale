@@ -90,6 +90,15 @@ def load_models():
     else:
         print(f"  WARNING: all-register detector not found at {all_path}")
 
+    # Check if hybrid Beemo ensembler is available
+    hybrid_path = os.path.join(MODELS_DIR, 'beemo_hybrid_ensembler.joblib')
+    semantic_path = os.path.join(MODELS_DIR, 'beemo_semantic_model')
+    if os.path.exists(hybrid_path) and os.path.exists(semantic_path):
+        models['hybrid_available'] = True
+        print("  Hybrid SOTA detector is AVAILABLE and active.")
+    else:
+        models['hybrid_available'] = False
+
     # Homoglyph normalizer (if it's a callable)
     hg_path = os.path.join(MODELS_DIR, manifest.get('homoglyph_normalizer', ''))
     if os.path.exists(hg_path) and hg_path:
@@ -302,18 +311,27 @@ def detect(req: DetectRequest, request: Request):
             register_confidence = None
 
     # Step 4: Per-register detection
-    if register in m['detectors']:
-        detector = m['detectors'][register]
-    elif 'all_detector' in m:
-        detector = m['all_detector']
-        register = 'all'
-    else:
-        raise HTTPException(status_code=500, detail="No detector available.")
+    ai_probability = None
+    if m.get('hybrid_available'):
+        try:
+            from tool.hybrid_detector import predict_hybrid
+            ai_probability = predict_hybrid(text)
+        except Exception as e:
+            print(f"Error executing hybrid prediction: {e}. Falling back to standard classifier.")
 
-    ai_proba = detector.predict_proba(X)[0]
-    classes = detector.classes_
-    ai_label_idx = list(classes).index(1) if 1 in classes else 1
-    ai_probability = float(ai_proba[ai_label_idx])
+    if ai_probability is None:
+        if register in m['detectors']:
+            detector = m['detectors'][register]
+        elif 'all_detector' in m:
+            detector = m['all_detector']
+            register = 'all'
+        else:
+            raise HTTPException(status_code=500, detail="No detector available.")
+
+        ai_proba = detector.predict_proba(X)[0]
+        classes = detector.classes_
+        ai_label_idx = list(classes).index(1) if 1 in classes else 1
+        ai_probability = float(ai_proba[ai_label_idx])
 
     # Step 5: Sentence-level analysis
     sentences_data = analyze_sentences(text, detector, feature_cols=m['feature_cols'])
@@ -385,22 +403,31 @@ def detect_batch(req: BatchDetectRequest):
         else:
             register = 'all'
 
-        detector = m['detectors'].get(register, m.get('all_detector'))
-        if detector is None:
-            results.append(DetectResponse(
-                ai_probability=0.0,
-                register=register,
-                register_confidence=None,
-                is_ai=False,
-                features=None,
-                processing_time_ms=0.0,
-            ))
-            continue
+        ai_probability = None
+        if m.get('hybrid_available'):
+            try:
+                from tool.hybrid_detector import predict_hybrid
+                ai_probability = predict_hybrid(text_norm)
+            except Exception:
+                pass
 
-        ai_proba = detector.predict_proba(X)[0]
-        classes = detector.classes_
-        ai_label_idx = list(classes).index(1) if 1 in classes else 1
-        ai_probability = float(ai_proba[ai_label_idx])
+        if ai_probability is None:
+            detector = m['detectors'].get(register, m.get('all_detector'))
+            if detector is None:
+                results.append(DetectResponse(
+                    ai_probability=0.0,
+                    register=register,
+                    register_confidence=None,
+                    is_ai=False,
+                    features=None,
+                    processing_time_ms=0.0,
+                ))
+                continue
+
+            ai_proba = detector.predict_proba(X)[0]
+            classes = detector.classes_
+            ai_label_idx = list(classes).index(1) if 1 in classes else 1
+            ai_probability = float(ai_proba[ai_label_idx])
 
         results.append(DetectResponse(
             ai_probability=ai_probability,

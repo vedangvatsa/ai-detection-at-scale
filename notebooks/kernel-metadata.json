@@ -1,7 +1,7 @@
 {
-  "id": "vedangvatsa123/ai-detection-raid-benchmark-v3",
-  "title": "AI Detection: RAID Benchmark V3",
-  "code_file": "kaggle_raid_bench.ipynb",
+  "id": "vedangvatsa123/ai-detection-beemo-sota-hybrid",
+  "title": "AI Detection: Beemo SOTA Hybrid",
+  "code_file": "kaggle_beemo_sota.ipynb",
   "language": "python",
   "kernel_type": "notebook",
   "is_private": "true",
