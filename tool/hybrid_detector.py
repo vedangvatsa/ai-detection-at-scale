@@ -63,7 +63,8 @@ def predict_hybrid(text: str) -> float:
                                       
     # 2. Extract Perplexity and Burstiness
     try:
-        ppl, burst = compute_perplexity_and_burstiness(text)
+        neural = compute_perplexity_and_burstiness(text)
+        ppl, burst = neural['perplexity'], neural['burstiness']
     except Exception:
         ppl, burst = 50.0, 1.0 # Default fallback
         
