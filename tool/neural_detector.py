@@ -26,8 +26,12 @@ def get_model_and_tokenizer():
             _device = torch.device("cpu")
 
         print(f"Loading neural observer model 'gpt2' on {_device}...", file=sys.stderr)
-        _tokenizer = AutoTokenizer.from_pretrained("gpt2")
-        _model = AutoModelForCausalLM.from_pretrained("gpt2").to(_device)
+        try:
+            _tokenizer = AutoTokenizer.from_pretrained("gpt2", local_files_only=True)
+            _model = AutoModelForCausalLM.from_pretrained("gpt2", local_files_only=True).to(_device)
+        except Exception as e:
+            print(f"GPT-2 not found in local cache ({e}). Skipping neural observer to run offline.", file=sys.stderr)
+            raise RuntimeError("GPT-2 model not cached locally.")
         _model.eval()
         
         # Ensure padding token is set
