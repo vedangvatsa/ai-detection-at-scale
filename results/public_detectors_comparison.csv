@@ -1,0 +1,7 @@
+benchmark,model,auc,accuracy,n_samples
+MAGE,roberta-base-openai-detector,0.7202125828901188,0.641,1000
+HC3,roberta-base-openai-detector,0.9781333854188466,0.945,1000
+TuringBench,roberta-base-openai-detector,0.6473650589477619,0.519,1000
+MAGE,Hello-SimpleAI/chatgpt-detector-roberta,0.571508610167321,0.554,1000
+HC3,Hello-SimpleAI/chatgpt-detector-roberta,0.9988745808743855,0.989,1000
+TuringBench,Hello-SimpleAI/chatgpt-detector-roberta,0.6162724503409106,0.359,1000
