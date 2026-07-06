@@ -4,17 +4,18 @@ import subprocess
 import zipfile
 import shutil
 
-MODELS_DIR = "/Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/models"
-KERNEL_ID = "vedangvatsa123/ai-detection-beemo-sota-hybrid"
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODELS_DIR = os.path.join(PROJECT_DIR, "models")
+KAGGLE_BIN = os.path.join(PROJECT_DIR, ".venv", "bin", "kaggle")
+KERNEL_ID = "vedangvatsa123/ai-detection-sota-pipeline"
 
 def main():
     print(f"Creating models directory at {MODELS_DIR} if it does not exist...")
     os.makedirs(MODELS_DIR, exist_ok=True)
-    
+
     print(f"Downloading outputs from Kaggle kernel: {KERNEL_ID}...")
-    # Run kaggle kernels output
     cmd = [
-        ".venv/bin/kaggle", "kernels", "output",
+        KAGGLE_BIN, "kernels", "output",
         KERNEL_ID, "-p", MODELS_DIR
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -24,24 +25,17 @@ def main():
         return
     
     print("Download complete. Checking downloaded files...")
-    zip_path = os.path.join(MODELS_DIR, "beemo_semantic_model.zip")
-    ensembler_path = os.path.join(MODELS_DIR, "beemo_hybrid_ensembler.joblib")
+    onnx_path = os.path.join(MODELS_DIR, "deberta_onnx_quantized.onnx")
+    ensemblers_path = os.path.join(MODELS_DIR, "beemo_register_ensemblers.joblib")
     
-    if not os.path.exists(zip_path):
-        print(f"Error: Expected checkpoint zip file '{zip_path}' not found.")
+    if not os.path.exists(onnx_path):
+        print(f"Error: Expected quantized ONNX model '{onnx_path}' not found.")
+        return
+    if not os.path.exists(ensemblers_path):
+        print(f"Error: Expected ensemblers joblib '{ensemblers_path}' not found.")
         return
         
-    print(f"Extracting {zip_path} to models/beemo_semantic_model...")
-    dest_dir = os.path.join(MODELS_DIR, "beemo_semantic_model")
-    os.makedirs(dest_dir, exist_ok=True)
-    
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(dest_dir)
-        
-    print("Cleaning up temporary zip file...")
-    os.remove(zip_path)
-    
-    print("Successfully downloaded and extracted Beemo SOTA model assets!")
+    print("Successfully downloaded SOTA model assets (ONNX model + register-specific ensemblers)!")
 
 if __name__ == "__main__":
     main()
