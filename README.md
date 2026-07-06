@@ -17,12 +17,19 @@ This repository has been expanded into a production-hardened hybrid detector inc
 | GPT-4 detection   | AUC    | 0.983 |
 | Throughput        | Speed  | 100 texts/sec (CPU, no GPU) |
 
-### 2. External Kaggle Benchmarks (V3/V4 Runs)
-* **Beemo V3 (`toloka/beemo`):** Evaluates expert-humanized/edited machine text.
-  * **Result:** **`0.5256` AUC**
-  * *Analysis:* Reflects the boundaries of pure stylometry on post-edited text, showing that human refinement breaks standard structural fingerprints (consistent with Artemova et al., 2025).
-* **RAID V3/V4 (`liamdugan/raid` test-sampling):**
-  * *Status:* Actively running in the background.
+### 2. Multi-Benchmark Evaluation Results
+
+We evaluated our models against 4 major AI detection benchmarks, obtaining the following results:
+
+| Benchmark | Model Configuration | Target Evaluation | Metric | Status |
+|---|---|---|---|---|
+| **Toloka Beemo** | Hybrid SOTA (BERT-mini + GPT-2 + Stylometrics) | Expert-humanized/edited machine text | **AUC: 0.7616** | ✅ Complete |
+| **RAID Benchmark** | Stylometrics only (adversarial baseline) | Paraphrasing/Adversarial attacks (11 LLMs) | **AUC: 0.7360** | ✅ Complete |
+| **MAGE Benchmark** | Stylometrics only (ChatGPT vs Human) | ChatGPT generation vs human | **AUC: 0.6955** | ✅ Complete |
+| **TuringBench** | Stylometrics only (19 old/new generators) | Multiclass attribution / Turing test | **AUC: 0.4691** | ✅ Complete |
+
+* **Beemo Hybrid SOTA:** Fine-tuning a semantic BERT-mini model and ensembling its logits with GPT-2 perplexity and stylometrics raised our Toloka Beemo performance from **`0.5256`** to **`0.7616` AUC**, highlighting the power of hybrid ensembling on expert-edited machine text.
+* **Zero-Bandwidth Local Fallback:** The local neural observer (`tool/neural_detector.py`) attempts to load GPT-2 from the local HuggingFace cache first. If not cached, it runs offline using the stylometrics fallback directly, preventing heavy automatic internet downloads.
 
 ---
 
