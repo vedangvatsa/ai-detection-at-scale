@@ -61,13 +61,15 @@ def get_stylometric_prob(text, model):
         print(f"Stylometric error: {e}")
         return 0.5
 
-def evaluate_benchmark(name, df, tokenizer, model, device, stylo_model, max_total=1000):
+def evaluate_benchmark(name, df, tokenizer, model, device, stylo_model, max_total=2000):
     print(f"\n=== {name} ===")
     sample_size = min(max_total, len(df))
     sample = df.sample(n=sample_size, random_state=42)
 
     records = []
-    for i, row in sample.iterrows():
+    for idx, (i, row) in enumerate(sample.iterrows()):
+        if idx > 0 and idx % 100 == 0:
+            print(f"  Processed {idx}/{len(sample)}...")
         text = row.get('text', row.get('Generation', ''))
         label = row['label']
 
