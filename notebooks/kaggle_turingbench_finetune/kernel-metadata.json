@@ -1,0 +1,13 @@
+{
+  "id": "vedangvatsa123/turingbench-roberta-large-finetune",
+  "title": "TuringBench RoBERTa-large Fine-tune",
+  "code_file": "kaggle_turingbench_finetune.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
