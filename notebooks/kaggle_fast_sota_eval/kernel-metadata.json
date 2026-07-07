@@ -1,0 +1,13 @@
+{
+  "id": "vedangvatsa123/ai-detection-fast-sota-eval",
+  "title": "AI Detection: Fast SOTA Eval",
+  "code_file": "kaggle_fast_sota_eval.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
