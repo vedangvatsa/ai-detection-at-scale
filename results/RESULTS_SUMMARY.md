@@ -162,16 +162,16 @@ Implementing the specialized pipeline above at 2000 samples per benchmark confir
 
 TuringBench improves from **0.4691** (stylometric only) to **0.9146** with the roberta-large public detector. HC3 is effectively saturated. MAGE is the remaining challenge; combining the public detector with stylometric features outperforms either alone.
 
-## MAGE SOTA Longformer (500 samples)
+## MAGE SOTA Longformer (2000 samples)
 
-The MAGE paper's Longformer detector (`nealcly/detection-longformer`) evaluated locally at 512 tokens on a 500-sample MAGE test split:
+The MAGE paper's Longformer detector (`nealcly/detection-longformer`) evaluated locally at 512 tokens:
 
 | Benchmark | Model | Tokens | AUC | Accuracy | Samples |
 |---|---|---|---|---|---|
-| **MAGE** | `nealcly/detection-longformer` | 512 | **0.9867** | 0.9000 | 500 |
+| **MAGE** | `nealcly/detection-longformer` | 512 | **0.9796** | 0.8940 | 2000 |
 | **TuringBench** | `nealcly/detection-longformer` | 512 | 0.7095 | 0.6760 | 500 |
 
-MAGE jumps from **0.7801** (public detector + stylometric ensemble) to **0.9867** with the MAGE Longformer, approaching the published SOTA ceiling. A full 2000-sample MAGE run is in progress.
+MAGE jumps from **0.7801** (public detector + stylometric ensemble) to **0.9796** with the MAGE Longformer at 2000 samples, matching published SOTA. A full 2000-sample TuringBench run is in progress.
 
 ## API Demonstration
 
