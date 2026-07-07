@@ -45,6 +45,18 @@ Per-benchmark specialized detector selection, 2000 samples, 512 tokens (1024 for
 * **Beemo Hybrid SOTA:** Fine-tuning a semantic BERT-mini model and ensembling its logits with GPT-2 perplexity and stylometrics raised our Toloka Beemo performance from **`0.5256`** to **`0.7616` AUC**, highlighting the power of hybrid ensembling on expert-edited machine text.
 * **Zero-Bandwidth Local Fallback:** The local neural observer (`tool/neural_detector.py`) attempts to load GPT-2 from the local HuggingFace cache first. If not cached, it runs offline using the stylometrics fallback directly, preventing heavy automatic internet downloads.
 
+### 4. SOTA Model Results (New)
+
+The MAGE paper's Longformer detector (`nealcly/detection-longformer`) evaluated at 512 tokens:
+
+| Benchmark | Model | Tokens | AUC | Accuracy | Samples |
+|---|---|---|---|---|---|
+| **MAGE** | `nealcly/detection-longformer` | 512 | **0.9867** | 0.9000 | 500 |
+| **TuringBench** | `nealcly/detection-longformer` | 512 | 0.7095 | 0.6760 | 500 |
+
+* **MAGE** jumps from **0.7801** (public detector ensemble) to **0.9867** with the MAGE Longformer, approaching published SOTA.
+* A full 2000-sample MAGE run is in progress.
+
 ---
 
 ## Production Features & API Suite

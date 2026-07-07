@@ -1,0 +1,7 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+
+=== nealcly/detection-longformer @ 512 tokens ===
+Loading nealcly/detection-longformer...
+Loading weights:   0%|          | 0/273 [00:00<?, ?it/s]Loading weights: 100%|██████████| 273/273 [00:00<00:00, 69358.83it/s]
+[transformers] Initializing global attention on CLS token...
+[transformers] Input ids are automatically padded to be a multiple of `config.attention_window`: 512
