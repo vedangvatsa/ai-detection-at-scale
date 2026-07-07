@@ -1,5 +1,5 @@
 {
-  "id": "vedangvatsa123/turingbench-roberta-large-finetune",
+  "id": "vedangvatsa123/turingbench-roberta-large-fine-tune",
   "title": "TuringBench RoBERTa-large Fine-tune",
   "code_file": "kaggle_turingbench_finetune.ipynb",
   "language": "python",
