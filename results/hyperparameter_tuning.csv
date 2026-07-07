@@ -1,0 +1,5 @@
+register,baseline_auc,tuned_auc,improvement,best_params
+academic,1.0,0.9781859432539641,-0.02181405674603587,"{'n_estimators': 200, 'min_samples_split': 5, 'min_samples_leaf': 4, 'max_features': 'log2', 'max_depth': 20}"
+news,1.0,0.9674403636683228,-0.032559636331677244,"{'n_estimators': 500, 'min_samples_split': 10, 'min_samples_leaf': 2, 'max_features': 'log2', 'max_depth': 30}"
+social,1.0,0.9136995396505639,-0.08630046034943606,"{'n_estimators': 100, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'log2', 'max_depth': 20}"
+creative,1.0,0.9613338146954392,-0.038666185304560785,"{'n_estimators': 500, 'min_samples_split': 10, 'min_samples_leaf': 2, 'max_features': 'log2', 'max_depth': 30}"

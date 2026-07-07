@@ -4,6 +4,11 @@ data/
 
 # Trained models (too large for git — train via scripts/09_ensemble_and_defense.py)
 models/*.joblib
+models/beemo_semantic_model/
+
+# Duplicate / cache directories
+ai-detection-at-scale/
+results/beemo/
 
 # Python virtual environment
 .venv/
