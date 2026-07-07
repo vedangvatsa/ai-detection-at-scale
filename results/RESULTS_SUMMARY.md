@@ -169,9 +169,9 @@ The MAGE paper's Longformer detector (`nealcly/detection-longformer`) evaluated 
 | Benchmark | Model | Tokens | AUC | Accuracy | Samples |
 |---|---|---|---|---|---|
 | **MAGE** | `nealcly/detection-longformer` | 512 | **0.9796** | 0.8940 | 2000 |
-| **TuringBench** | `nealcly/detection-longformer` | 512 | 0.7095 | 0.6760 | 500 |
+| **TuringBench** | `nealcly/detection-longformer` | 512 | 0.6729 | 0.6645 | 2000 |
 
-MAGE jumps from **0.7801** (public detector + stylometric ensemble) to **0.9796** with the MAGE Longformer at 2000 samples, matching published SOTA. A full 2000-sample TuringBench run is in progress.
+MAGE jumps from **0.7801** (public detector + stylometric ensemble) to **0.9796** with the MAGE Longformer at 2000 samples, matching published SOTA. TuringBench remains best with `roberta-large-openai-detector` (**0.9146**); the MAGE Longformer does not generalize across generators.
 
 ## API Demonstration
 
