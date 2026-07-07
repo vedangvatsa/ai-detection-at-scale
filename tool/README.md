@@ -17,9 +17,20 @@ uvicorn tool.api:app --host 0.0.0.0 --port 8000 --reload
 |--------|------|-------------|
 | `POST` | `/detect` | Detect single text |
 | `POST` | `/detect/batch` | Detect up to 1000 texts |
+| `POST` | `/detect/public` | Use a public HuggingFace detector |
+| `POST` | `/detect/public/batch` | Batch public detector inference |
+| `GET` | `/public/detectors` | List available public detectors |
 | `GET` | `/health` | Health check + loaded models |
 | `GET` | `/models` | List loaded models |
 | `GET` | `/features` | List feature names |
+
+### Public detector server
+
+Use `tool/public_api.py` to start the API with public detector support:
+
+```bash
+uvicorn tool.public_api:app --host 0.0.0.0 --port 8000
+```
 
 ### Example
 
@@ -71,3 +82,10 @@ word_lists = get_word_lists(lang)
 | `scripts/12_humanized_eval.py` | Evaluate on humanized AI text |
 | `scripts/13_binoculars_baseline.py` | Run Binoculars on same corpus |
 | `scripts/14_multi_signal_ensemble.py` | Stylometric + neural meta-ensemble |
+| `scripts/27_roberta_detector_benchmark.py` | Public RoBERTa OpenAI detector benchmark |
+| `scripts/28_optimize_roberta_stylometric.py` | RoBERTa + stylometric logistic ensemble |
+| `scripts/29_compare_public_detectors.py` | Compare public detectors on benchmarks |
+| `scripts/30_advanced_ensemble.py` | 3 public detectors + stylometric ensemble |
+| `scripts/31_per_benchmark_optimized.py` | Per-benchmark specialized detector selection |
+| `tool/public_detector.py` | Wrapper for public HuggingFace detectors |
+| `tool/public_api.py` | FastAPI app with public detector endpoints |

@@ -1,0 +1,4 @@
+benchmark,auc,n_samples,detectors,coefs,accuracy
+MAGE,0.7801567707937372,2000,"['roberta-base', 'stylometric']","[np.float64(1.3371436446591514), np.float64(2.7743975411461417)]",
+HC3,0.9996723486487266,2000,['chatgpt-detector'],,0.994
+TuringBench,0.9145931034482758,2000,['roberta-large'],,0.6665

@@ -92,12 +92,12 @@ def load_models():
     else:
         print(f"  WARNING: all-register detector not found at {all_path}")
 
-    # Check if hybrid Beemo ensembler is available
-    hybrid_path = os.path.join(MODELS_DIR, 'beemo_hybrid_ensembler.joblib')
-    semantic_path = os.path.join(MODELS_DIR, 'beemo_semantic_model')
-    if os.path.exists(hybrid_path) and os.path.exists(semantic_path):
+    # Check if SOTA hybrid ensemblers are available
+    hybrid_path = os.path.join(MODELS_DIR, 'beemo_register_ensemblers.joblib')
+    onnx_path = os.path.join(MODELS_DIR, 'deberta_onnx_quantized.onnx')
+    if os.path.exists(hybrid_path) and os.path.exists(onnx_path):
         models['hybrid_available'] = True
-        print("  Hybrid SOTA detector is AVAILABLE and active.")
+        print("  SOTA Hybrid Register-Aware detector is AVAILABLE and active.")
     else:
         models['hybrid_available'] = False
 
@@ -122,25 +122,28 @@ class DetectRequest(BaseModel):
     text: str = Field(..., description="Text to analyze")
     register: Optional[str] = Field(None, description="Override register (academic, news, social, creative). If None, auto-detected.")
     return_features: bool = Field(False, description="Return extracted feature values")
+    sensitivity: str = Field("normal", description="Detection sensitivity level: low, normal, or high")
 
 
 class DetectResponse(BaseModel):
     ai_probability: float = Field(..., description="Probability that text is AI-generated (0.0 to 1.0)")
     register: str = Field(..., description="Detected or specified register")
     register_confidence: Optional[float] = Field(None, description="Confidence of register classification")
-    is_ai: bool = Field(..., description="Binary classification at 0.5 threshold")
+    is_ai: bool = Field(..., description="Binary classification based on chosen sensitivity threshold")
     features: Optional[dict] = Field(None, description="Extracted feature values (if return_features=True)")
     processing_time_ms: float = Field(..., description="Processing time in milliseconds")
     sentences: Optional[List[dict]] = Field(None, description="Sentence-level highlight heatmap")
     neural_signals: Optional[dict] = Field(None, description="Neural signals including perplexity and burstiness")
     model_attribution: Optional[dict] = Field(None, description="Predicted model source and confidence")
     is_calibrated: bool = Field(True, description="True if output probability is calibrated")
+    sensitivity_applied: str = Field("normal", description="The sensitivity level used for the decision threshold")
 
 
 class BatchDetectRequest(BaseModel):
     texts: List[str] = Field(..., description="List of texts to analyze")
     register: Optional[str] = Field(None, description="Override register for all texts")
     return_features: bool = Field(False, description="Return extracted feature values")
+    sensitivity: str = Field("normal", description="Detection sensitivity level: low, normal, or high")
 
 
 class BatchDetectResponse(BaseModel):
@@ -325,7 +328,7 @@ def detect(req: DetectRequest, request: Request):
     if m.get('hybrid_available'):
         try:
             from tool.hybrid_detector import predict_hybrid
-            ai_probability = predict_hybrid(text)
+            ai_probability = predict_hybrid(text, register=register)
         except Exception as e:
             print(f"Error executing hybrid prediction: {e}. Falling back to standard classifier.")
 
@@ -358,17 +361,28 @@ def detect(req: DetectRequest, request: Request):
         feats = extract_feature_vector(text, feature_cols=m['feature_cols'], extended=False)
         features_dict = dict(zip(m['feature_cols'], feats)) if feats else None
 
+    # Map sensitivity to threshold
+    sens = getattr(req, 'sensitivity', 'normal').lower()
+    if sens == 'high':
+        threshold = 0.35
+    elif sens == 'low':
+        threshold = 0.70
+    else:
+        threshold = 0.50
+        sens = 'normal'
+
     res = {
         "ai_probability": ai_probability,
         "register": register,
         "register_confidence": register_confidence,
-        "is_ai": ai_probability >= 0.5,
+        "is_ai": ai_probability >= threshold,
         "features": features_dict,
         "processing_time_ms": round(elapsed_ms, 2),
         "sentences": sentences_data,
         "neural_signals": neural_signals,
         "model_attribution": attribution,
-        "is_calibrated": True
+        "is_calibrated": True,
+        "sensitivity_applied": sens
     }
     
     set_cache(cache_key, res)
@@ -383,6 +397,16 @@ def detect_batch(req: BatchDetectRequest):
     if len(req.texts) > 1000:
         raise HTTPException(status_code=400, detail="Batch size limit: 1000 texts.")
 
+    # Map sensitivity to threshold
+    sens = getattr(req, 'sensitivity', 'normal').lower()
+    if sens == 'high':
+        threshold = 0.35
+    elif sens == 'low':
+        threshold = 0.70
+    else:
+        threshold = 0.50
+        sens = 'normal'
+
     results = []
     for text in req.texts:
         text_norm = normalize_text_defensive(text)
@@ -395,6 +419,7 @@ def detect_batch(req: BatchDetectRequest):
                 is_ai=False,
                 features=None,
                 processing_time_ms=0.0,
+                sensitivity_applied=sens
             ))
             continue
 
@@ -415,7 +440,7 @@ def detect_batch(req: BatchDetectRequest):
         if m.get('hybrid_available'):
             try:
                 from tool.hybrid_detector import predict_hybrid
-                ai_probability = predict_hybrid(text_norm)
+                ai_probability = predict_hybrid(text_norm, register=register)
             except Exception:
                 pass
 
@@ -429,6 +454,7 @@ def detect_batch(req: BatchDetectRequest):
                     is_ai=False,
                     features=None,
                     processing_time_ms=0.0,
+                    sensitivity_applied=sens
                 ))
                 continue
 
@@ -445,9 +471,10 @@ def detect_batch(req: BatchDetectRequest):
             ai_probability=ai_probability,
             register=register,
             register_confidence=None,
-            is_ai=ai_probability >= 0.5,
+            is_ai=ai_probability >= threshold,
             features=None,
             processing_time_ms=0.0,
+            sensitivity_applied=sens
         ))
 
     total_ms = (time.time() - t0) * 1000

@@ -28,6 +28,20 @@ We evaluated our models against 4 major AI detection benchmarks, obtaining the f
 | **MAGE Benchmark** | Stylometrics only (ChatGPT vs Human) | ChatGPT generation vs human | **AUC: 0.6955** | ✅ Complete |
 | **TuringBench** | Stylometrics only (19 old/new generators) | Multiclass attribution / Turing test | **AUC: 0.4691** | ✅ Complete |
 
+### 3. Public Detector Results (New)
+
+Per-benchmark specialized detector selection, 2000 samples, 512 tokens (1024 for MAGE):
+
+| Benchmark | Best Detector / Ensemble | AUC | Accuracy |
+|---|---|---|---|
+| **MAGE** | roberta-base-openai + stylometric (1024 tok) | **0.7801** | — |
+| **HC3** | Hello-SimpleAI/chatgpt-detector-roberta (512 tok) | **0.9997** | 0.9940 |
+| **TuringBench** | roberta-large-openai-detector (512 tok) | **0.9146** | 0.6665 |
+
+* **TuringBench** improves from **0.4691** → **0.9146** by switching to `roberta-large-openai-detector`.
+* **HC3** reaches near ceiling with the `chatgpt-detector-roberta` public model.
+* **MAGE** benefits from combining public detector probability with stylometric features.
+* **Public Detector API:** `tool/public_api.py` exposes `/detect/public`, `/detect/public/batch`, and `/public/detectors` endpoints for these models.
 * **Beemo Hybrid SOTA:** Fine-tuning a semantic BERT-mini model and ensembling its logits with GPT-2 perplexity and stylometrics raised our Toloka Beemo performance from **`0.5256`** to **`0.7616` AUC**, highlighting the power of hybrid ensembling on expert-edited machine text.
 * **Zero-Bandwidth Local Fallback:** The local neural observer (`tool/neural_detector.py`) attempts to load GPT-2 from the local HuggingFace cache first. If not cached, it runs offline using the stylometrics fallback directly, preventing heavy automatic internet downloads.
 

@@ -105,6 +105,63 @@ Note: The neural detector values are from published benchmarks (RAID and Binocul
 
 Notebook: [Kaggle notebook](https://www.kaggle.com/code/vedangvatsa123/ai-detection-binoculars-benchmark)
 
+## Public Detector Comparison
+
+We evaluated two publicly available HuggingFace detectors on MAGE, HC3, and TuringBench (1000 samples each, 256 tokens):
+
+| Benchmark | roberta-base-openai | chatgpt-detector-roberta | Best |
+|-----------|---------------------|----------------------------|------|
+| MAGE | 0.720 | 0.572 | **roberta-base** |
+| HC3 | 0.978 | **0.999** | **chatgpt-detector** |
+| TuringBench | 0.647 | 0.616 | **roberta-base** |
+
+- **HC3** is near ceiling for both detectors; chatgpt-detector is slightly stronger.
+- **TuringBench** is the hardest benchmark; both public detectors struggle.
+- **MAGE** favors roberta-base-openai but remains below stylometric performance on the original in-domain corpus.
+
+## Stylometric + Public Detector Ensemble
+
+A logistic regression ensemble combining `roberta-base-openai` probabilities with stylometric features (2000 samples, 256 tokens) yields:
+
+| Benchmark | RoBERTa alone | Stylometric alone | Combined LR | n |
+|-----------|---------------|-------------------|-------------|---|
+| MAGE | 0.731 | 0.714 | **0.792** | 2000 |
+| HC3 | 0.987 | 0.715 | **0.986** | 2000 |
+| TuringBench | 0.662 | 0.460 | **0.680** | 2000 |
+
+The ensemble improves over the best single detector on **MAGE** (+0.061) and **TuringBench** (+0.018), but not on HC3 where RoBERTa already dominates.
+
+## Advanced Multi-Detector Ensemble
+
+A 4-signal logistic regression ensemble combining `roberta-base-openai`, `roberta-large-openai`, `Hello-SimpleAI/chatgpt-detector-roberta`, and stylometric features (1000 samples, 512 tokens) shows strong complementarity:
+
+| Benchmark | Combined LR | roberta-base | roberta-large | chatgpt-detector | Stylometric |
+|-----------|-------------|--------------|---------------|------------------|-------------|
+| MAGE | 0.756 | 0.731 | 0.718 | 0.576 | 0.679 |
+| HC3 | **0.993** | 0.976 | 0.946 | **0.999** | 0.717 |
+| TuringBench | **0.912** | 0.691 | **0.912** | 0.636 | 0.444 |
+
+**Key finding:** `roberta-large-openai` is exceptional on **TuringBench** (AUC 0.912), lifting the benchmark from 0.68 to 0.91. The chatgpt-detector dominates **HC3** (AUC 0.999). Stylometric signals contribute positively on MAGE but have negative weight on TuringBench, indicating they should be dropped there.
+
+This suggests a **per-benchmark specialized pipeline**: chatgpt-detector for HC3, roberta-large for TuringBench, and a roberta-base + stylometric ensemble for MAGE.
+
+## Per-Benchmark Optimized Results (2000 samples)
+
+Implementing the specialized pipeline above at 2000 samples per benchmark confirms the gains:
+
+| Benchmark | Selected Detector / Ensemble | Tokens | AUC | Accuracy |
+|-----------|------------------------------|--------|-----|----------|
+| MAGE | roberta-base-openai + stylometric | 1024 | **0.7801** | — |
+| HC3 | Hello-SimpleAI/chatgpt-detector-roberta | 512 | **0.9997** | 0.9940 |
+| TuringBench | roberta-large-openai-detector | 512 | **0.9146** | 0.6665 |
+
+**Overall best scores (local, 2000 samples):**
+- MAGE: **0.7801**
+- HC3: **0.9997**
+- TuringBench: **0.9146**
+
+TuringBench improves from **0.4691** (stylometric only) to **0.9146** with the roberta-large public detector. HC3 is effectively saturated. MAGE is the remaining challenge; combining the public detector with stylometric features outperforms either alone.
+
 ## API Demonstration
 
 The FastAPI inference endpoint (`tool/api.py`) was verified locally:
@@ -112,6 +169,9 @@ The FastAPI inference endpoint (`tool/api.py`) was verified locally:
 - `/health` returns all loaded models and registers
 - `/detect` returns AI probability, predicted register, and confidence
 - `/detect/batch` handles multiple texts
+- `/detect/public` uses public HuggingFace detectors (e.g., `roberta-openai`, `chatgpt-detector`)
+- `/detect/public/batch` runs batch public detector inference
+- `/public/detectors` lists available public detectors
 
 Example:
 ```text
@@ -119,4 +179,11 @@ AI sample:    probability=0.96, register=creative, is_ai=True
 Human sample: probability=0.185, register=social, is_ai=False
 ```
 
-See `scripts/17_api_demo.py` for a runnable client demo.
+Public detector example:
+```bash
+curl -X POST http://localhost:8000/detect/public \
+  -H "Content-Type: application/json" \
+  -d '{"text": "The results demonstrate that this approach is clearly effective.", "detector": "roberta-openai"}'
+```
+
+See `scripts/17_api_demo.py` and the new `tool/public_api.py` for runnable client demos.

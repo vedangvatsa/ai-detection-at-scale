@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Detector at Scale</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="background-glows">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+    </div>
+
+    <main class="container">
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-brain-circuit brain-icon"></i>
+                <h1>Stylometric AI Detector</h1>
+            </div>
+            <p class="subtitle">Cross-register detection of AI-generated text using 31 interpretable features</p>
+        </header>
+
+        <section class="editor-section">
+            <div class="card editor-card">
+                <div class="editor-header">
+                    <span class="label-heading"><i class="fa-solid fa-paragraph"></i> Input Text</span>
+                    <div class="word-counter"><span id="word-count">0</span> words</div>
+                </div>
+                <textarea id="text-input" placeholder="Paste your text here (minimum 5 words, recommended 50+ words for better accuracy)..."></textarea>
+                <div class="editor-actions">
+                    <div class="options-group">
+                        <label for="register-override">
+                            <i class="fa-solid fa-sliders"></i> Register:
+                        </label>
+                        <select id="register-override">
+                            <option value="">Auto-Detect</option>
+                            <option value="academic">Academic / Scientific</option>
+                            <option value="news">News / Journalism</option>
+                            <option value="social">Social / Conversational</option>
+                            <option value="creative">Creative / Narrative</option>
+                        </select>
+                    </div>
+                    <button id="analyze-btn" class="btn btn-primary">
+                        <span>Analyze Text</span>
+                        <i class="fa-solid fa-circle-notch fa-spin btn-spinner"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Banner -->
+        <div id="error-banner" class="error-banner hidden">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="error-message">An error occurred</span>
+        </div>
+
+        <!-- Results Dashboard -->
+        <section id="results-section" class="results-section hidden">
+            <div class="results-grid">
+                <!-- Main Gauge Card -->
+                <div class="card gauge-card">
+                    <div class="card-header">
+                        <h2>Overall Result</h2>
+                    </div>
+                    <div class="gauge-container">
+                        <svg class="progress-ring" width="220" height="220">
+                            <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.05)" stroke-width="12" fill="transparent" r="90" cx="110" cy="110"/>
+                            <circle id="progress-ring-bar" class="progress-ring-bar" stroke-width="12" stroke-linecap="round" fill="transparent" r="90" cx="110" cy="110"/>
+                        </svg>
+                        <div class="gauge-overlay">
+                            <span id="probability-val" class="probability-val">0%</span>
+                            <span id="classification-badge" class="classification-badge">UNKNOWN</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diagnostics Card -->
+                <div class="card diagnostics-card">
+                    <div class="card-header">
+                        <h2>Routing & Metadata</h2>
+                    </div>
+                    <div class="meta-list">
+                        <div class="meta-item">
+                            <span class="meta-label"><i class="fa-solid fa-list-check"></i> Detected Register:</span>
+                            <span id="detected-register" class="meta-value">-</span>
+                        </div>
+                        <div class="meta-item" id="confidence-row">
+                            <span class="meta-label"><i class="fa-solid fa-chart-line"></i> Router Confidence:</span>
+                            <span id="router-confidence" class="meta-value">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label"><i class="fa-solid fa-gauge-high"></i> Speed:</span>
+                            <span id="processing-time" class="meta-value">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label"><i class="fa-solid fa-shield-halved"></i> Homoglyph Defense:</span>
+                            <span class="meta-value text-success"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Breakdown Card -->
+            <div class="card features-card">
+                <div class="card-header">
+                    <h2>Stylometric Feature Details</h2>
+                    <span class="header-desc">Values below highlight specific features feeding into the random forest models</span>
+                </div>
+                <div class="features-grid" id="features-grid">
+                    <!-- Feature bars will be inserted dynamically by JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>AI Detector at Scale &bull; MIT License &bull; 31-Feature Stylometric Model</p>
+    </footer>
+
+    <!-- App Logic -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
