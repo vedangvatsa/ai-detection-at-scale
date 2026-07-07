@@ -13,6 +13,7 @@ from transformers import (
     TrainingArguments,
     Trainer,
     EarlyStoppingCallback,
+    DataCollatorWithPadding,
 )
 from sklearn.metrics import roc_auc_score, accuracy_score
 
@@ -80,7 +81,6 @@ def make_dataset(df, tokenizer, max_length):
         return tokenizer(
             example['text'],
             truncation=True,
-            padding='max_length',
             max_length=max_length,
         )
 
@@ -113,6 +113,7 @@ def main():
         id2label={0: "human", 1: "ai"},
         label2id={"human": 0, "ai": 1},
     )
+    model.gradient_checkpointing_enable()
 
     train_ds = make_dataset(train_df, tokenizer, args.max_length)
     val_ds = make_dataset(val_df, tokenizer, args.max_length)
@@ -136,7 +137,7 @@ def main():
             outputs = model(**inputs)
             logits = outputs.logits
             loss_fct = torch.nn.CrossEntropyLoss(weight=class_weights)
-            loss = loss_fct(logits, labels)
+            loss = loss_fct(logits.float(), labels)
             return (loss, outputs) if return_outputs else loss
 
     training_args = TrainingArguments(
@@ -158,13 +159,17 @@ def main():
         seed=args.seed,
         dataloader_num_workers=2,
         remove_unused_columns=False,
+        fp16=torch.cuda.is_available(),
     )
+
+    data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
 
     trainer = WeightedTrainer(
         model=model,
         args=training_args,
         train_dataset=train_ds,
         eval_dataset=val_ds,
+        data_collator=data_collator,
         compute_metrics=compute_metrics,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
     )
