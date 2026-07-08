@@ -177,7 +177,7 @@ Table 3 presents the four-by-four cross-domain AUC matrix for the full eleven-fe
 | Creative | 0.705 | 0.796 | 0.688 | **1.000** | 0.730 |
 | Mean off-diag | 0.789 | 0.763 | 0.663 | 0.697 | **0.728** |
 
-Note. Encyclopedic register excluded from binary classification (no AI texts in this register's RAID split). All values are AUC-ROC from the held-out test portion of the target register. Within-register AUC = 1.000 reflects the strong document-length confound described in Section 3.2 and discussed in Section 5.
+Note: Encyclopedic register excluded from binary classification (no AI texts in this register's RAID split). All values are AUC-ROC from the held-out test portion of the target register. Within-register AUC = 1.000 reflects the strong document-length confound described in Section 3.2 and discussed in Section 5.
 
 The diagonal mean is 1.000 (perfect classification within register), and the off-diagonal mean is 0.728, giving a mean generalization cost of 0.272 AUC points. The near-perfect within-register AUC reflects the document-length confound, as human and AI texts in this corpus differ substantially in median length per register (Section 3.2). The cross-domain AUC (0.728) is less inflated because the length distributions may vary across registers. Social is the hardest target register in cross-domain transfer (mean off-diagonal AUC = 0.663), while news trained on social achieves 0.842, suggesting that news and social registers share discriminable patterns.
 
@@ -309,7 +309,7 @@ The results in Section 4 are based on the full corpus, where human and AI texts 
 | Creative | 92,603 | 92,603 | 185,206 |
 | **Total** | **596,305** | **596,305** | **1,192,610** |
 
-Note. Academic register has fewer matched texts due to the small AI text count (8,343) in RAID's academic subset. Encyclopedic register excluded (no AI texts).
+Note: Academic register has fewer matched texts due to the small AI text count (8,343) in RAID's academic subset. Encyclopedic register excluded (no AI texts).
 
 **Effect sizes.** Table 8 reports Cohen's d for the length-matched subset. The sign consistency analysis reveals a notable change. Four features now show consistent signs across all four registers (opener ratio, connector density, sentence CV, and character n-gram entropy), compared to only three in the unmatched analysis. Sentence CV is consistently negative (AI texts have more uniform sentence length than human texts in all registers), and character n-gram entropy is consistently negative (AI text is more predictable at the character level). MTLD, which was consistent in the unmatched analysis, now reverses sign in academic (d = -0.17), suggesting its previous consistency was an artifact of the length confound.
 
@@ -434,7 +434,7 @@ A critical question for practitioners is whether the features detect modern mode
 | Cohere | N/A | 0.971 | 0.921 | 0.975 | 0.956 |
 | Cohere-Chat | N/A | 0.969 | 0.916 | 0.981 | 0.955 |
 
-Note. Academic register only has GPT-3.5 AI texts (8,343). All other models are absent from RAID's academic subset. N/A indicates insufficient data.
+Note: Academic register only has GPT-3.5 AI texts (8,343). All other models are absent from RAID's academic subset. N/A indicates insufficient data.
 
 The key finding is that **GPT-4 is detectable at AUC 0.983**, the highest among all models alongside GPT-3 and MPT. Its stylistic profile (high connector density, uniform sentence rhythm, predictable character distributions) diverges consistently from human writing across all three registers where it appears. The hardest models to detect are Cohere variants (AUC 0.955 to 0.956), which produce more human-like stylistic profiles. GPT-2, the oldest model, is not the easiest to detect (AUC 0.969).
 
@@ -558,7 +558,7 @@ Table 19 compares the stylometric approach to published neural detector numbers 
 | DetectGPT (T5) | Neural | 0.850 | 0.550 | 0.30 (acc@FPR=5%) | 1 | No |
 | N-gram + SVM | Statistical | 0.900 | 0.680 | 0.60 (est.) | 500 | No |
 
-Note. Neural detector values are from the Kaggle version 6 output (Vedang Vatsa, 2026), which uses published benchmark numbers from Dugan et al. [4] and Hans et al. [21]. Adversarial values for neural detectors are accuracy at FPR=5% from the RAID shared task [4]. The stylometric adversarial value is AUC from this paper's evaluation. N-gram + SVM values are estimates.
+Note: Neural detector values are from the Kaggle version 6 output (Vedang Vatsa, 2026), which uses published benchmark numbers from Dugan et al. [4] and Hans et al. [21]. Adversarial values for neural detectors are accuracy at FPR=5% from the RAID shared task [4]. The stylometric adversarial value is AUC from this paper's evaluation. N-gram + SVM values are estimates.
 
 The stylometric approach achieves higher within-register AUC (0.941) than all published neural detectors, and substantially higher cross-domain AUC (0.728 vs 0.55 to 0.70). The clearest difference is in adversarial resilience. The stylometric classifier retains AUC 0.951 under paraphrase attacks, while RADAR drops to 0.40 accuracy at FPR=5% and Binoculars to 0.55. Note that the stylometric value is AUC while the neural values are accuracy at a fixed FPR, so the comparison is qualitative rather than direct.
 
