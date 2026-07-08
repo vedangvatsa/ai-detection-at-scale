@@ -12,8 +12,11 @@ FILES = [
     'tool/calibration.py',
     'tool/adversarial_defense.py',
     'tool/feature_extractor.py',
+    'tool/public_api.py',
+    'tool/register_classifier.py',
     'scripts/train_attribution.py',
     'scripts/train_calibration.py',
+    'scripts/download_assets.py',
 ]
 
 
@@ -32,6 +35,15 @@ def main():
     cleaned = normalize_text_defensive('Thіs іs а tеst\u200b!')
     assert cleaned == 'This is a test!', repr(cleaned)
     print('adversarial defense OK:', cleaned)
+
+    print('Importing register classifier...')
+    from tool.register_classifier import load_models_from_manifest, classify_register
+    print('register classifier OK')
+
+    print('Importing feature extractor...')
+    from tool.feature_extractor import extract_features, ALL_FEATURE_COLS
+    assert len(ALL_FEATURE_COLS) == 35, f"expected 35 features, got {len(ALL_FEATURE_COLS)}"
+    print('feature extractor OK, feature count:', len(ALL_FEATURE_COLS))
 
     print('\nAll verification checks passed.')
 

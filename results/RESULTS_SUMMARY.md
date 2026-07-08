@@ -10,11 +10,11 @@
 
 ## Overall Performance
 
-| Metric | 11-feature | 31-feature |
-|--------|------------|------------|
-| AUC    | 0.9645     | **0.9826** |
-| Accuracy | 0.9011   | **0.9361** |
-| F1     | 0.8710     | **0.9168** |
+| Metric   | 11-feature | 31-feature   |
+|----------|------------|--------------|
+| AUC      | 0.9645     | **0.9826**   |
+| Accuracy | 0.9011     | **0.9361**   |
+| F1       | 0.8710     | **0.9168**   |
 
 The 31-feature model improves AUC by **+0.018** over the 11-feature baseline. Source: `results/extended_feature_comparison.csv`.
 
@@ -34,15 +34,15 @@ Per-register numbers are in `results/tpr_at_low_fpr.csv`.
 
 The humanization-attack evaluation is run by `scripts/12_humanized_eval.py` and saved in `results/humanized_eval.csv`.
 
-| Attack strategy | AUC    | AUC drop |
-|-----------------|--------|----------|
-| clean baseline  | 0.9417 | —        |
-| remove connectors | 0.9340 | -0.0076 |
-| synonym swap    | 0.9403 | -0.0014 |
-| vary length     | 0.9400 | -0.0017 |
-| punctuation     | 0.9387 | -0.0030 |
-| first person    | 0.9398 | -0.0019 |
-| **combined**    | 0.9324 | **-0.0093** |
+| Attack strategy     | AUC    | AUC drop    |
+|---------------------|--------|-------------|
+| clean baseline      | 0.9417 | —           |
+| remove connectors   | 0.9340 | -0.0076     |
+| synonym swap        | 0.9403 | -0.0014     |
+| vary length         | 0.9400 | -0.0017     |
+| punctuation         | 0.9387 | -0.0030     |
+| first person        | 0.9398 | -0.0019     |
+| **combined**        | 0.9324 | **-0.0093** |
 
 The combined humanization attack reduces AUC by less than 1 percentage point, showing strong robustness to these surface-level perturbations.
 
@@ -54,12 +54,12 @@ A separate adversarial evaluation on the RAID adversarial test split is run by `
 
 ## Per-Register Error Rates (31-feature model)
 
-| Register  | AUC   | FP rate | FN rate |
-|-------------|-------|---------|---------|
-| academic    | 1.000 | 0.010   | 0.000   |
-| news        | 0.999 | 0.002   | 0.038   |
-| social      | 0.982 | 0.027   | 0.134   |
-| creative    | 0.982 | 0.055   | 0.061   |
+| Register | AUC   | FP rate | FN rate |
+|----------|-------|---------|---------|
+| academic | 1.000 | 0.010   | 0.000   |
+| news     | 0.999 | 0.002   | 0.038   |
+| social   | 0.982 | 0.027   | 0.134   |
+| creative | 0.982 | 0.055   | 0.061   |
 
 Social and creative are the hardest registers, with higher false-negative rates (AI misclassified as human).
 

@@ -8,6 +8,7 @@ raw detector probability and the document word count. It also evaluates
 calibration with Brier score and Expected Calibration Error (ECE).
 """
 import os
+import sys
 import json
 import joblib
 import numpy as np
@@ -17,9 +18,15 @@ from sklearn.isotonic import IsotonicRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import brier_score_loss, log_loss
 
-DATA_DIR = "/Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/data"
-MODELS_DIR = "/Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/models"
-RESULTS_DIR = "/Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/results"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.join(SCRIPT_DIR, '..')
+DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+MODELS_DIR = os.path.join(PROJECT_DIR, 'models')
+RESULTS_DIR = os.path.join(PROJECT_DIR, 'results')
+
+sys.path.insert(0, PROJECT_DIR)
+from tool.feature_extractor import extract_feature_vector
+from tool.register_classifier import load_models_from_manifest, classify_register
 
 FEATURE_COLS = [
     'mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
@@ -48,20 +55,22 @@ def _word_count(text):
     return len(str(text).split()) if isinstance(text, str) and text.strip() else 0
 
 
-def load_predictions_and_labels(df, detector, feature_cols):
-    """Return raw probabilities and labels using the provided detector."""
-    from tool.feature_extraction import extract_feature_vector
-    from tool.register_classifier import classify_register
-
+def load_predictions_and_labels(df, models, feature_cols):
+    """Return raw probabilities and labels using the loaded register detectors."""
     probs = []
     labels = []
     wcs = []
+    detectors = models.get('detectors', {})
+    all_detector = models.get('all_detector')
+
     for _, row in df.iterrows():
         text = str(row.get('text', ''))
         label = int(row.get('label', row.get('is_ai', 0)))
         feats = extract_feature_vector(text, feature_cols=feature_cols, extended=False)
-        register, _ = classify_register(feats)
-        reg_detector = detector.get(register, detector.get('all', None))
+        if feats is None:
+            continue
+        register, _ = classify_register(feats, models)
+        reg_detector = detectors.get(register, all_detector)
         if reg_detector is None:
             continue
         proba = reg_detector.predict_proba([feats])[0]
@@ -83,20 +92,26 @@ def main():
     os.makedirs(MODELS_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
+    print("Loading models...")
+    try:
+        models = load_models_from_manifest(MODELS_DIR)
+    except FileNotFoundError as e:
+        print(f"Error loading models: {e}")
+        return
+    feature_cols = models.get('feature_cols') or FEATURE_COLS
+
     print("Loading features...")
     df = pd.read_parquet(feat_path)
-    required = ['text', 'label'] + FEATURE_COLS
+    required = ['text', 'label'] + feature_cols
     if 'label' not in df.columns and 'is_ai' in df.columns:
         df['label'] = df['is_ai']
     missing = [c for c in required if c not in df.columns]
     if missing:
         print(f"Missing columns {missing}; falling back to feature-only calibration.")
-        # Use a synthetic deterministic split for illustration.
-        from tool.feature_extraction import extract_feature_vector
-        df = df.dropna(subset=FEATURE_COLS)
-        X = df[FEATURE_COLS].values
+        df = df.dropna(subset=feature_cols)
+        X = df[feature_cols].values
         y = df['label'].values if 'label' in df.columns else np.zeros(len(df))
-        # We need a proxy for word count; use mean_sent_len as a noisy correlate.
+        # Proxy for word count; use mean_sent_len as a noisy correlate.
         wcs = df['mean_sent_len'].fillna(20).values.astype(int)
         # Build a simple detector so we can emit probabilities
         from sklearn.ensemble import RandomForestClassifier
@@ -111,17 +126,11 @@ def main():
         df = df.dropna(subset=required)
         print(f"Loaded {len(df)} samples.")
         train_df, test_df = train_test_split(df, test_size=0.3, random_state=42, stratify=df['label'])
-        # Load detectors
-        detectors = {}
-        for reg in ['academic', 'news', 'fiction', 'nonfiction', 'all']:
-            p = os.path.join(MODELS_DIR, f'detector_{reg}.joblib')
-            if os.path.exists(p):
-                detectors[reg] = joblib.load(p)
-        if not detectors:
+        if not models.get('detectors') and not models.get('all_detector'):
             print("No register detectors found; cannot train calibrator.")
             return
-        raw_probs_tr, y_tr, wcs_tr = load_predictions_and_labels(train_df, detectors, FEATURE_COLS)
-        raw_probs_te, y_te, wcs_te = load_predictions_and_labels(test_df, detectors, FEATURE_COLS)
+        raw_probs_tr, y_tr, wcs_tr = load_predictions_and_labels(train_df, models, feature_cols)
+        raw_probs_te, y_te, wcs_te = load_predictions_and_labels(test_df, models, feature_cols)
 
     print(f"Calibration samples: train={len(raw_probs_tr)}, test={len(raw_probs_te)}")
 

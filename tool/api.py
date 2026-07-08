@@ -41,6 +41,7 @@ from tool.sentence_analyzer import analyze_sentences
 from tool.attribution import attribute_source
 from tool.adversarial_defense import normalize_text_defensive
 from tool.calibration import calibrate_probability
+from tool.register_classifier import classify_register
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 
@@ -337,20 +338,7 @@ def detect(req: DetectRequest, request: Request):
                 detail=f"Unknown register '{register}'. Available: {list(m['detectors'].keys())}",
             )
     else:
-        if 'register_classifier' in m:
-            reg_pred = m['register_classifier'].predict(X)[0]
-            reg_proba = m['register_classifier'].predict_proba(X)[0]
-            classes = m['register_classifier'].classes_
-            idx = list(classes).index(reg_pred)
-            register_confidence = float(reg_proba[idx])
-            # Decode label encoder if available
-            if 'register_label_encoder' in m:
-                register = str(m['register_label_encoder'].inverse_transform([reg_pred])[0])
-            else:
-                register = str(reg_pred)
-        else:
-            register = 'all'
-            register_confidence = None
+        register, register_confidence = classify_register(feat_vector, m)
 
     # Step 4: Per-register detection / Hybrid ensembler
     if register in m['detectors']:
@@ -474,14 +462,19 @@ def detect_batch(req: BatchDetectRequest, request: Request):
 
         if req.register:
             register = req.register
-        elif 'register_classifier' in m:
-            reg_pred = m['register_classifier'].predict(X)[0]
-            if 'register_label_encoder' in m:
-                register = str(m['register_label_encoder'].inverse_transform([reg_pred])[0])
-            else:
-                register = str(reg_pred)
+            if register not in m['detectors']:
+                results.append(DetectResponse(
+                    ai_probability=0.0,
+                    register=register,
+                    register_confidence=None,
+                    is_ai=False,
+                    features=None,
+                    processing_time_ms=0.0,
+                    sensitivity_applied=sens
+                ))
+                continue
         else:
-            register = 'all'
+            register, _ = classify_register(feat_vector, m)
 
         ai_probability = None
         if m.get('hybrid_available'):

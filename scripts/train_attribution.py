@@ -14,8 +14,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-DATA_DIR = "/Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/data"
-MODELS_DIR = "/Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/models"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(SCRIPT_DIR, '..', 'data')
+MODELS_DIR = os.path.join(SCRIPT_DIR, '..', 'models')
 
 FEATURE_COLS = [
     'mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',

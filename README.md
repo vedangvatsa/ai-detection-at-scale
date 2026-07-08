@@ -1,6 +1,6 @@
 # AI Detection at Scale
 
-Cross-register stylometric detection of AI-generated text using 31 interpretable features. Evaluated on 2.77M texts across four registers and twelve model variants from the [RAID benchmark](https://github.com/liamdugan/raid).
+Cross-register stylometric detection of AI-generated text using 35 interpretable features (the production API uses the original 11-feature model; 35 features are available for extended experiments). Evaluated on 2.77M texts across four registers and twelve model variants from the [RAID benchmark](https://github.com/liamdugan/raid).
 
 This repository has been expanded into a production-hardened hybrid detector incorporating **stylometric ensembling**, **multi-class model source attribution**, and **local neural observer diagnostics** (surprisal analytics).
 
@@ -44,7 +44,7 @@ Per-benchmark evaluation of publicly available HuggingFace detectors, 2000 sampl
 * **MAGE** benefits from combining public detector probability with stylometric features.
 * **Public Detector API:** `tool/public_api.py` exposes `/detect/public`, `/detect/public/batch`, and `/public/detectors` endpoints for these models.
 * **Beemo Hybrid Ensemble:** Fine-tuning a semantic BERT-mini model and ensembling its logits with GPT-2 perplexity and stylometrics raised our Toloka Beemo performance from **`0.5256`** to **`0.7616` AUC**. This is an ensemble improvement over our own stylometric baseline, not a claim of state-of-the-art over all published methods.
-* **Local Neural Observer:** `tool/neural_detector.py` computes perplexity and burstiness from a locally cached GPT-2 model. It requires the model to be pre-downloaded; otherwise it raises a `RuntimeError`. The API currently calls it on every request, so production deployments must cache GPT-2 beforehand.
+* **Local Neural Observer:** `tool/neural_detector.py` computes perplexity and burstiness from a locally cached GPT-2 model. The API calls it on every request but now catches failures and returns a safe fallback (`perplexity: null, burstiness: null`) instead of crashing. Production deployments should still pre-cache GPT-2 to avoid degraded responses.
 
 ### 4. SOTA Model Results (New)
 
@@ -103,18 +103,19 @@ The ensemble script combines multiple fine-tuned models with a logistic regressi
   * `Cohere`
   * `MPT`
   * `Human`
-* The current training script does not report a held-out accuracy or confusion matrix. Run it to regenerate `models/attribution_classifier.joblib`.
+* `scripts/train_attribution.py` reports held-out accuracy, a classification report, and a confusion matrix, and saves metrics to `models/attribution_metrics.json`. Run it to regenerate `models/attribution_classifier.joblib`.
 
 ### 3. Sentence-level Heatmap Analysis
 * Implemented in [sentence_analyzer.py](file:///Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/tool/sentence_analyzer.py).
 * Utilizes a 3-sentence sliding window to evaluate localized probability scores, returning character offsets (`start`, `end`) to allow visual formatting on frontend clients.
 
-### 4. API Hardening (Development-Focused)
-* Located in [api.py](file:///Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/tool/api.py).
-* **CORS Support:** Enabled with `allow_origins=["*"]` for frontend integration. Set `CORS_ORIGINS` env var to restrict this in production.
-* **Rate Limiting:** Token-bucket limit of 60 requests per minute per IP on `/detect`. The `/detect/batch` endpoint currently does not apply IP-level rate limiting.
-* **Response Caching:** In-memory MD5-keyed cache (no TTL; entries evicted only when the 1000-entry limit is reached).
-* **Known Production Gaps:** No API-key authentication, in-memory rate-limit state is not shared across workers, and GPT-2 must be pre-cached for neural signals to avoid `RuntimeError`.
+### 4. API Hardening
+* Located in [api.py](file:///Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/tool/api.py) and [public_api.py](file:///Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/tool/public_api.py).
+* **CORS Support:** Configurable via the `CORS_ORIGINS` environment variable; defaults to `["*"]` only when unset.
+* **Authentication:** Optional API key enforcement via `API_KEY` on `/detect`, `/detect/batch`, `/detect/public`, `/detect/public/batch`, and `/public/detectors`.
+* **Rate Limiting:** Token-bucket limit of 60 requests per minute per IP applies to all endpoints above; state is bounded by `RATE_LIMIT_MAX_IPS` and stale entries are evicted after `RATE_LIMIT_IP_TTL_SECONDS`.
+* **Response Caching:** In-memory MD5-keyed cache with TTL (`CACHE_TTL_SECONDS`) and a `MAX_CACHE_ENTRIES` eviction limit.
+* **Known Production Gaps:** In-memory cache and rate-limit state are not shared across workers; Redis is recommended for multi-process deployments.
 
 ---
 
@@ -149,7 +150,7 @@ curl -X POST http://localhost:8000/detect \
 ```text
 ├── tool/                    Inference API + Feature Extractors
 │   ├── api.py               Production API with Caching, Rate Limiting & CORS
-│   ├── feature_extractor.py 31-feature extraction
+│   ├── feature_extractor.py 35-feature extraction (11 used by production API)
 │   ├── neural_detector.py   Perplexity & Burstiness observer (GPT-2)
 │   ├── attribution.py       RAID multi-class source classifier
 │   ├── sentence_analyzer.py Sliding-window sentence highlights
@@ -171,11 +172,12 @@ The following limitations have been identified and either fixed or explicitly do
 * **GPT-4 detection AUC 0.983** is from the per-model breakdown in `results/per_model_auc.csv` (reproduced by `scripts/05_mustdo_analyses.py`), not a dedicated GPT-4-only benchmark.
 * **Public detector scores** (HC3 0.9997, TuringBench 0.9146, MAGE 0.7801) are evaluations of existing HuggingFace models (`Hello-SimpleAI/chatgpt-detector-roberta`, `roberta-large-openai-detector`, etc.), not detectors we trained.
 * **Model-source attribution** predicts model **groups** (OpenAI, Llama, Mistral, Cohere, MPT, Human), not individual models. `scripts/train_attribution.py` now reports held-out accuracy, a classification report, and a confusion matrix.
-* **Calibration** now supports a trained Platt/isotonic calibrator (`scripts/train_calibration.py`). If no trained model is present, `tool/calibration.py` falls back to the original length-based heuristic.
+* **Calibration** now supports a trained Platt/isotonic calibrator (`scripts/train_calibration.py`); the script was previously broken because it imported non-existent modules. If no trained model is present, `tool/calibration.py` falls back to the original length-based heuristic.
 * **Adversarial defense** in `tool/adversarial_defense.py` is a **character-level preprocessor** (homoglyph normalization, zero-width/control-char stripping, whitespace/punctuation cleanup). It does **not** defend against paraphrase, prompt injection, synonym substitution, or back-translation.
-* **API production gaps** are partially closed: CORS is configurable via `CORS_ORIGINS`, cache has a TTL (`CACHE_TTL_SECONDS`), both `/detect` and `/detect/batch` now check API keys (`API_KEY`) and IP rate limits, and neural signal failures are caught with a safe fallback. Rate-limit state is now bounded by `RATE_LIMIT_MAX_IPS` with stale-entry eviction; the cache remains in-memory, so a Redis-backed deployment is still recommended for multiple workers.
-* **Feature quality:** 11 of the 31 features are standard stylometric metrics; the remaining 20 are heuristic keyword-density and suffix-based counts. A duplicate `'flawed'` in the `NEGATIVE_WORDS` list was removed.
-* **Test coverage** is minimal. `tests/test_adversarial_defense.py` verifies the defense preprocessor; broader unit tests should be added before deployment.
+* **API production gaps** are partially closed: CORS is configurable via `CORS_ORIGINS`, cache has a TTL (`CACHE_TTL_SECONDS`), `/detect`, `/detect/batch`, `/detect/public`, `/detect/public/batch`, and `/public/detectors` now check API keys (`API_KEY`) and IP rate limits, and neural signal failures are caught with a safe fallback. Rate-limit state is bounded by `RATE_LIMIT_MAX_IPS` with stale-entry eviction; the cache remains in-memory, so a Redis-backed deployment is still recommended for multiple workers.
+* **Feature quality:** 11 of the **35** features are standard stylometric metrics; the remaining 24 are heuristic keyword-density and suffix-based counts. A duplicate `'flawed'` in the `NEGATIVE_WORDS` list was removed. The `capitalized_entity_density` regex was tightened to require at least two consecutive capitalized words, reducing sentence-initial false positives.
+* **Reproducibility:** `scripts/download_assets.py` now validates download sizes, retries failed transfers, and supports optional SHA256 checksum verification via `--checksums <file>`. A `--verify-only` mode is also provided.
+* **Test coverage** is minimal. `tests/test_adversarial_defense.py` verifies the defense preprocessor and `tests/test_feature_extractor.py` checks the feature count and duplicate word lists; broader unit tests should be added before deployment.
 
 ---
 

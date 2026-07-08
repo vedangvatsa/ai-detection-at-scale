@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Shared feature extraction module — 31 stylometric features.
+Shared feature extraction module — 35 stylometric features.
 Used by the inference API, extended analysis scripts, and ensemble pipeline.
 
 Original 11 features: MTLD, sentence CV, mean sentence length, self-mention density,
 connector density, opener ratio, hedge density, booster density, char n-gram entropy,
 word repetition rate, punctuation entropy.
 
-Extended 20 features: Flesch-Kincaid grade, Flesch reading ease, Gunning fog index,
+Extended 24 features: Flesch-Kincaid grade, Flesch reading ease, Gunning fog index,
 SMOG index, positive sentiment density, negative sentiment density, sentiment polarity,
 exclamation density, question density, passive voice density, subordination density,
 preposition density, adjective density, adverb density, nominalization density,
 capitalized entity density, number density, acronym density, url_email density,
-quote density.
+quote density, type-token ratio, hapax legomena ratio, Yule's K, Simpson's D.
 """
 import re
 import math
@@ -359,7 +359,8 @@ def _extract_extended_features(text, words, sents, orig):
     feats['nominalization_density'] = nom_density
 
     # ── Named entities / surface features (5 features) ──
-    cap_entities = len(re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', text))
+    # Require at least two consecutive capitalized words to reduce sentence-initial false positives.
+    cap_entities = len(re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b', text))
     cap_density = cap_entities / max(words_per_1000, 0.001)
 
     number_count = len(re.findall(r'\b\d+(?:\.\d+)?\b', text))
@@ -371,7 +372,7 @@ def _extract_extended_features(text, words, sents, orig):
     url_email = len(re.findall(r'https?://\S+|\b[\w.+-]+@[\w-]+\.[\w.-]+\b', text))
     url_email_density = url_email / max(words_per_1000, 0.001)
 
-    quote_count = len(re.findall(r'"[^"]*"|\'[^\']*\'|"[^"]*"', text))
+    quote_count = len(re.findall(r'"[^"]*"|\'[^\']*\'', text))
     quote_density = quote_count / max(words_per_1000, 0.001)
 
     feats['capitalized_entity_density'] = cap_density
