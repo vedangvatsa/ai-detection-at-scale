@@ -52,6 +52,10 @@ def parse_args():
                         help="Limit validation samples for fast testing")
     parser.add_argument("--seed", type=int, default=42,
                         help="Random seed")
+    parser.add_argument("--fp16", action="store_true", default=True,
+                        help="Use mixed precision (fp16) training")
+    parser.add_argument("--no_fp16", action="store_true",
+                        help="Disable mixed precision training")
     return parser.parse_args()
 
 
@@ -170,7 +174,7 @@ def main():
         seed=args.seed,
         dataloader_num_workers=2,
         remove_unused_columns=False,
-        fp16=torch.cuda.is_available(),
+        fp16=(args.fp16 and not args.no_fp16 and torch.cuda.is_available()),
     )
 
     data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
