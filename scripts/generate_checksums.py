@@ -17,28 +17,9 @@ PROJECT_DIR = os.path.join(SCRIPT_DIR, '..')
 DATA_DIR = os.path.join(PROJECT_DIR, 'data')
 MODELS_DIR = os.path.join(PROJECT_DIR, 'models')
 
-# Assets that download_assets.py expects; adjust if the release changes.
-DATA_ASSETS = [
-    'corpus_raw.parquet.part_a',
-    'corpus_raw.parquet.part_b',
-    'corpus_features.parquet',
-    'human_academic.parquet',
-    'human_academic2.parquet',
-    'human_news.parquet',
-    'human_social.parquet',
-    'corpus_summary.csv',
-]
-
-MODEL_ASSETS = [
-    'register_classifier.joblib',
-    'detector_all.joblib',
-    'detector_academic.joblib',
-    'detector_news.joblib',
-    'detector_social.joblib',
-    'detector_creative.joblib',
-    'homoglyph_normalizer.joblib',
-    'manifest.json',
-]
+# Reuse the canonical asset lists from download_assets.py so there is one source of truth.
+sys.path.insert(0, PROJECT_DIR)
+from scripts.download_assets import DATA_ASSETS, MODEL_ASSETS
 
 
 def _sha256_file(path: str) -> str:

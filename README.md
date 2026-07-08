@@ -9,14 +9,14 @@ This repository has been expanded into a production-hardened hybrid detector inc
 ## Benchmark Results
 
 ### 1. Stylometric RF Baselines
-| Setting / Dataset | Metric | Value | Notes |
+|Setting / Dataset|Metric|Value|Notes|
 |---|---|---|---|
-| Within-register (5-fold CV, unmatched) | AUC | 0.933–0.978 | See Table 4 in paper. Academic/news AUC is inflated by the document-length confound described in Section 3.2; the cross-domain matrix diagonal reaches 1.000 for the same reason. |
-| Within-register (length-matched) | AUC | 0.967–0.978 | Mean 0.970; length confound removed. See Table 9 in paper. |
-| Cross-domain | AUC | 0.728 | Mean off-diagonal transfer AUC. |
-| Adversarial (Paraphrase) | AUC | 0.951 | Reproduced by `scripts/06_adversarial_eval.py`; results saved in `results/adversarial_results.csv` (paraphrase row AUC = 0.951). |
-| GPT-4 detection | AUC | 0.983 | From per-model evaluation (Table 11 / `results/per_model_auc.csv`), reproduced by `scripts/05_mustdo_analyses.py`. |
-| Throughput | Speed | 100 texts/sec | CPU, no GPU. |
+|Within-register (5-fold CV, unmatched)|AUC|0.933–0.978|See Table 4 in paper. Academic/news AUC is inflated by the document-length confound described in Section 3.2; the cross-domain matrix diagonal reaches 1.000 for the same reason.|
+|Within-register (length-matched)|AUC|0.967–0.978|Mean 0.970; length confound removed. See Table 9 in paper.|
+|Cross-domain|AUC|0.728|Mean off-diagonal transfer AUC.|
+|Adversarial (Paraphrase)|AUC|0.951|Reproduced by `scripts/06_adversarial_eval.py`; results saved in `results/adversarial_results.csv` (paraphrase row AUC = 0.951).|
+|GPT-4 detection|AUC|0.983|From per-model evaluation (Table 11 / `results/per_model_auc.csv`), reproduced by `scripts/05_mustdo_analyses.py`.|
+|Throughput|Speed|100 texts/sec|CPU, no GPU.|
 
 ### 2. Multi-Benchmark Evaluation Results
 
@@ -175,7 +175,7 @@ The following limitations have been identified and either fixed or explicitly do
 * **Calibration** now supports a trained Platt/isotonic calibrator (`scripts/train_calibration.py`); the script was previously broken because it imported non-existent modules. If no trained model is present, `tool/calibration.py` falls back to the original length-based heuristic.
 * **Adversarial defense** in `tool/adversarial_defense.py` is a **character-level preprocessor** (homoglyph normalization, zero-width/control-char stripping, whitespace/punctuation cleanup). It does **not** defend against paraphrase, prompt injection, synonym substitution, or back-translation.
 * **API production gaps** are partially closed: CORS is configurable via `CORS_ORIGINS`, cache has a TTL (`CACHE_TTL_SECONDS`), `/detect`, `/detect/batch`, `/detect/public`, `/detect/public/batch`, and `/public/detectors` now check API keys (`API_KEY`) and IP rate limits, and neural signal failures are caught with a safe fallback. Rate-limit state is bounded by `RATE_LIMIT_MAX_IPS` with stale-entry eviction; the cache remains in-memory, so a Redis-backed deployment is still recommended for multiple workers.
-* **Feature quality:** 11 of the **35** features are standard stylometric metrics; the remaining 24 are heuristic keyword-density and suffix-based counts. A duplicate `'flawed'` in the `NEGATIVE_WORDS` list was removed. The `capitalized_entity_density` regex was tightened to require at least two consecutive capitalized words, reducing sentence-initial false positives.
+* **Feature quality:** 11 of the **35** features are standard stylometric metrics; the remaining 24 are extended counts. `extract_features(..., use_pos_tags=True)` enables NLTK POS tags for adjective, adverb, and nominalization densities; the default remains the legacy suffix heuristics so existing models are not broken. A duplicate `'flawed'` in the `NEGATIVE_WORDS` list was removed. The `capitalized_entity_density` regex was tightened to require at least two consecutive capitalized words, reducing sentence-initial false positives.
 * **Reproducibility:** `scripts/download_assets.py` now validates download sizes, retries failed transfers, and supports optional SHA256 checksum verification via `--checksums <file>`. A `--verify-only` mode is also provided. Run `scripts/generate_checksums.py` to create a checksum manifest from locally verified assets.
 * **Notebooks:** Kaggle notebooks under `notebooks/` were not individually tested in CI. Run `scripts/audit_notebooks.py` to check for hardcoded paths, missing `tool.*` imports, or missing `scripts/` executables.
 * **Test coverage** is still limited but now covers the defense preprocessor, feature extractor, and mocked API endpoints (`tests/test_adversarial_defense.py`, `tests/test_feature_extractor.py`, `tests/test_api.py`). Broader unit tests should be added before deployment.

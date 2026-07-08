@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from tool.public_detector import predict_ai_probability, MODELS
 from tool.api import app as base_app
-from tool.api import _check_api_key, check_rate_limit
+from tool.api_security import _check_api_key, check_rate_limit
 
 # Re-export base app with additional endpoints
 app = base_app

@@ -14,6 +14,7 @@ preposition density, adjective density, adverb density, nominalization density,
 capitalized entity density, number density, acronym density, url_email density,
 quote density, type-token ratio, hapax legomena ratio, Yule's K, Simpson's D.
 """
+import os
 import re
 import math
 import unicodedata
@@ -278,9 +279,29 @@ def _extract_original_features(text, words, sents, lang='en'):
     }
 
 
-# ── Extended 20 features ──────────────────────────────────────────────────
+def _pos_tag_words(words: list, use_pos_tags: bool = False) -> list:
+    """
+    Return (word, tag) pairs using NLTK when explicitly requested and available.
+    The NLTK path is opt-in because it changes the exact values of extended features
+    and would break models trained with the legacy suffix counts.
+    """
+    if not use_pos_tags:
+        return []
+    try:
+        import nltk
+        # Ensure the averaged_perceptron_tagger is available (download is lazy/no-op if present).
+        try:
+            nltk.data.find('taggers/averaged_perceptron_tagger')
+        except LookupError:
+            nltk.download('averaged_perceptron_tagger', quiet=True)
+        return nltk.pos_tag(words)
+    except Exception:
+        return []
 
-def _extract_extended_features(text, words, sents, orig):
+
+# ── Extended 24 features ─────────────────────────────────────────────────
+
+def _extract_extended_features(text, words, sents, orig, use_pos_tags: bool = False):
     n_words = len(words)
     n_sents = len(sents)
     words_per_1000 = n_words / 1000.0
@@ -342,14 +363,16 @@ def _extract_extended_features(text, words, sents, orig):
     prep_count = sum(1 for w in words if w in PREPOSITIONS)
     prep_density = prep_count / max(words_per_1000, 0.001)
 
-    adj_count = sum(1 for w in words if any(w.endswith(suf) for suf in COMMON_ADJECTIVE_SUFFIXES) and len(w) > 4)
-    adj_density = adj_count / max(words_per_1000, 0.001)
-
-    adv_count = sum(1 for w in words if w.endswith('ly') and len(w) > 3)
-    adv_density = adv_count / max(words_per_1000, 0.001)
-
-    nom_count = sum(1 for w in words if any(w.endswith(suf) for suf in NOMINALIZATION_SUFFIXES) and len(w) > 5)
-    nom_density = nom_count / max(words_per_1000, 0.001)
+    # Use NLTK POS tags when explicitly requested; otherwise fall back to the legacy suffix heuristics.
+    pos_tags = _pos_tag_words(words, use_pos_tags=use_pos_tags)
+    if pos_tags:
+        adj_count = sum(1 for _, tag in pos_tags if tag.startswith('JJ'))
+        adv_count = sum(1 for _, tag in pos_tags if tag.startswith('RB'))
+        nom_count = sum(1 for w, tag in pos_tags if tag.startswith('NN') and len(w) > 5)
+    else:
+        adj_count = sum(1 for w in words if any(w.endswith(suf) for suf in COMMON_ADJECTIVE_SUFFIXES) and len(w) > 4)
+        adv_count = sum(1 for w in words if w.endswith('ly') and len(w) > 3)
+        nom_count = sum(1 for w in words if any(w.endswith(suf) for suf in NOMINALIZATION_SUFFIXES) and len(w) > 5)
 
     feats['passive_density'] = passive_density
     feats['subordination_density'] = sub_density
@@ -443,13 +466,15 @@ def normalize_unicode(text):
     return unicodedata.normalize('NFKC', text)
 
 
-def extract_features(text, extended=True, lang=None):
+def extract_features(text, extended=True, lang=None, use_pos_tags=False):
     """Extract stylometric features from a single text.
 
     Args:
         text: Input text string.
-        extended: If True, extract all 31 features. If False, only original 11.
+        extended: If True, extract all 35 features. If False, only original 11.
         lang: Language override (e.g. 'en', 'fr'). If None, dynamically detected.
+        use_pos_tags: If True, use NLTK POS tags for adjective/adverb/nominalization
+            densities when available. Default False preserves legacy suffix counts.
 
     Returns:
         Dict of feature name -> float value, or None if text is too short.
@@ -475,13 +500,13 @@ def extract_features(text, extended=True, lang=None):
     result = {k: v for k, v in orig.items() if k not in ('sent_lengths', 'text_lower', 'content_words')}
 
     if extended:
-        ext = _extract_extended_features(text, words, sents, orig)
+        ext = _extract_extended_features(text, words, sents, orig, use_pos_tags=use_pos_tags)
         result.update(ext)
 
     return result
 
 
-def extract_feature_vector(text, feature_cols=None, extended=True, lang=None):
+def extract_feature_vector(text, feature_cols=None, extended=True, lang=None, use_pos_tags=False):
     """Extract features as an ordered list matching feature_cols.
 
     Args:
@@ -489,6 +514,7 @@ def extract_feature_vector(text, feature_cols=None, extended=True, lang=None):
         feature_cols: List of feature names to extract. If None, uses all.
         extended: Whether to compute extended features.
         lang: Language override. If None, dynamically detected.
+        use_pos_tags: If True, use NLTK POS tags for extended features.
 
     Returns:
         List of float values in the same order as feature_cols, or None.
@@ -496,7 +522,7 @@ def extract_feature_vector(text, feature_cols=None, extended=True, lang=None):
     if feature_cols is None:
         feature_cols = ALL_FEATURE_COLS if extended else ORIGINAL_FEATURE_COLS
 
-    feats = extract_features(text, extended=extended, lang=lang)
+    feats = extract_features(text, extended=extended, lang=lang, use_pos_tags=use_pos_tags)
     if feats is None:
         return None
     return [feats.get(c, 0.0) for c in feature_cols]

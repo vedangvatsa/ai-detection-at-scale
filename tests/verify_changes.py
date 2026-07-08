@@ -9,6 +9,7 @@ sys.path.insert(0, REPO_ROOT)
 
 FILES = [
     'tool/api.py',
+    'tool/api_security.py',
     'tool/calibration.py',
     'tool/adversarial_defense.py',
     'tool/feature_extractor.py',

@@ -49,9 +49,32 @@ def test_extract_features_short_text_returns_none():
     assert extract_features("", extended=True) is None
 
 
+def test_use_pos_tags_default_is_backward_compatible():
+    text = "The quick brown fox jumps over the lazy dog."
+    feats_default = extract_features(text, extended=True)
+    feats_legacy = extract_features(text, extended=True, use_pos_tags=False)
+    assert set(feats_default.keys()) == set(feats_legacy.keys())
+    # When use_pos_tags is not enabled, behavior must match the legacy suffix counts.
+    assert feats_default['adjective_density'] == feats_legacy['adjective_density']
+    assert feats_default['adverb_density'] == feats_legacy['adverb_density']
+    assert feats_default['nominalization_density'] == feats_legacy['nominalization_density']
+
+
+def test_use_pos_tags_true_does_not_crash():
+    text = "The quick brown fox jumps over the lazy dog."
+    feats = extract_features(text, extended=True, use_pos_tags=True)
+    assert feats is not None
+    # If nltk is not installed, the result should still contain the expected keys.
+    assert 'adjective_density' in feats
+    assert 'adverb_density' in feats
+    assert 'nominalization_density' in feats
+
+
 if __name__ == '__main__':
     test_feature_count_matches_code()
     test_negative_words_no_duplicates()
     test_capitalized_entity_ignores_lone_sentence_starter()
     test_extract_features_short_text_returns_none()
+    test_use_pos_tags_default_is_backward_compatible()
+    test_use_pos_tags_true_does_not_crash()
     print('All feature extractor tests passed.')

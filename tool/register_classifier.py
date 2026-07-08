@@ -44,8 +44,6 @@ def classify_register(feature_vector: list, models: Dict[str, Any], override: Op
     """
     import numpy as np
     if override:
-        if override in models.get('detectors', {}):
-            return override, None
         return override, None
 
     if 'register_classifier' not in models:
