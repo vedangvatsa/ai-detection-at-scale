@@ -14,7 +14,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.join(SCRIPT_DIR, '..')
 NOTEBOOKS_DIR = os.path.join(PROJECT_DIR, 'notebooks')
 
-HARDcoded_PATH_RE = re.compile(r'/Users/\w+|/home/\w+|C:\\\\Users\\\\\w+|/kaggle/working')
+HARDcoded_PATH_RE = re.compile(r'/Users/\w+|/home/\w+|C:\\\\Users\\\\\w+')
 TOOL_IMPORT_RE = re.compile(r'(?:from|import)\s+tool\b')
 SCRIPT_IMPORT_RE = re.compile(r'(?:from|install)\s+scripts\b')
 BANG_SCRIPT_RE = re.compile(r'!python\s+scripts/(\S+)')
@@ -52,9 +52,9 @@ def audit_notebook(path):
                 if not os.path.exists(script_path):
                     issues.append((idx, f'missing script module: scripts.{mod}', None))
         for script in BANG_SCRIPT_RE.findall(source):
-            script_path = os.path.join(PROJECT_DIR, script)
+            script_path = os.path.join(PROJECT_DIR, 'scripts', script)
             if not os.path.exists(script_path):
-                issues.append((idx, f'missing bang script: {script}', None))
+                issues.append((idx, f'missing bang script: scripts/{script}', None))
     return issues
 
 

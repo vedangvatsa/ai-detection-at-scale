@@ -374,6 +374,10 @@ def _extract_extended_features(text, words, sents, orig, use_pos_tags: bool = Fa
         adv_count = sum(1 for w in words if w.endswith('ly') and len(w) > 3)
         nom_count = sum(1 for w in words if any(w.endswith(suf) for suf in NOMINALIZATION_SUFFIXES) and len(w) > 5)
 
+    adj_density = adj_count / max(words_per_1000, 0.001)
+    adv_density = adv_count / max(words_per_1000, 0.001)
+    nom_density = nom_count / max(words_per_1000, 0.001)
+
     feats['passive_density'] = passive_density
     feats['subordination_density'] = sub_density
     feats['preposition_density'] = prep_density
@@ -497,7 +501,7 @@ def extract_features(text, extended=True, lang=None, use_pos_tags=False):
     if orig is None:
         return None
 
-    result = {k: v for k, v in orig.items() if k not in ('sent_lengths', 'text_lower', 'content_words')}
+    result = {k: v for k, v in orig.items() if k not in ('sent_lengths', 'text_lower', 'content_words', 'n_words', 'n_sents')}
 
     if extended:
         ext = _extract_extended_features(text, words, sents, orig, use_pos_tags=use_pos_tags)

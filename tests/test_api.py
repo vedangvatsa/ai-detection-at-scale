@@ -14,6 +14,7 @@ import numpy as np
 try:
     from fastapi.testclient import TestClient
     from tool import api as api_module
+    from tool import api_security
     FASTAPI_AVAILABLE = True
 except Exception as e:
     FASTAPI_AVAILABLE = False
@@ -69,7 +70,7 @@ class TestAPI(unittest.TestCase):
     @patch.object(api_module, 'get_models')
     def test_detect_no_api_key_required_when_unset(self, mock_get):
         mock_get.return_value = self.fake_models
-        api_module.API_KEY = ''  # disabled
+        api_security.API_KEY = ''  # disabled
         resp = self.client.post('/detect', json={
             'text': 'Furthermore, the results clearly demonstrate that this approach is effective.',
             'return_features': False,
@@ -83,7 +84,7 @@ class TestAPI(unittest.TestCase):
     @patch.object(api_module, 'get_models')
     def test_detect_requires_api_key_when_set(self, mock_get):
         mock_get.return_value = self.fake_models
-        api_module.API_KEY = 'secret-key'
+        api_security.API_KEY = 'secret-key'
         resp = self.client.post('/detect', json={
             'text': 'Furthermore, the results clearly demonstrate that this approach is effective.',
         })
@@ -92,7 +93,7 @@ class TestAPI(unittest.TestCase):
     @patch.object(api_module, 'get_models')
     def test_detect_batch(self, mock_get):
         mock_get.return_value = self.fake_models
-        api_module.API_KEY = ''
+        api_security.API_KEY = ''
         resp = self.client.post('/detect/batch', json={
             'texts': [
                 'Furthermore, the results clearly demonstrate that this approach is effective.',

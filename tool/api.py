@@ -33,7 +33,6 @@ from tool.api_security import (
     set_cache,
     _check_api_key,
     check_rate_limit,
-    API_KEY,
 )
 
 from tool.feature_extractor import (
