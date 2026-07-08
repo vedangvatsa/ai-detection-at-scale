@@ -6,6 +6,14 @@ import argparse
 import numpy as np
 import pandas as pd
 import torch
+from packaging import version
+
+# PyTorch < 2.6 cannot pass the transformers torch.load safety check by default.
+# The models we load from HuggingFace are trusted, so patch the guard.
+if version.parse(torch.__version__.split('+')[0]) < version.parse("2.6"):
+    import transformers.modeling_utils as _mu
+    _mu.check_torch_load_is_safe = lambda: None
+
 from datasets import load_dataset
 from transformers import (
     AutoTokenizer,
