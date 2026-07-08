@@ -1,0 +1,13 @@
+{
+  "id": "vedangvatsa123/turingbench-ensemble-training",
+  "title": "TuringBench Ensemble Training",
+  "code_file": "kaggle_turingbench_ensemble.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
