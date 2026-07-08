@@ -9,13 +9,14 @@ This repository has been expanded into a production-hardened hybrid detector inc
 ## Benchmark Results
 
 ### 1. Stylometric RF Baselines
-| Setting / Dataset | Metric | Value |
-|-------------------|--------|-------|
-| Within-register   | AUC    | 0.933–0.978 |
-| Cross-domain      | AUC    | 0.728 |
-| Adversarial (Paraphrase) | AUC | 0.951 |
-| GPT-4 detection   | AUC    | 0.983 |
-| Throughput        | Speed  | 100 texts/sec (CPU, no GPU) |
+| Setting / Dataset | Metric | Value | Notes |
+|---|---|---|---|
+| Within-register (5-fold CV, unmatched) | AUC | 0.933–0.978 | See Table 4 in paper. Academic/news AUC is inflated by the document-length confound described in Section 3.2; the cross-domain matrix diagonal reaches 1.000 for the same reason. |
+| Within-register (length-matched) | AUC | 0.967–0.978 | Mean 0.970; length confound removed. See Table 9 in paper. |
+| Cross-domain | AUC | 0.728 | Mean off-diagonal transfer AUC. |
+| Adversarial (Paraphrase) | AUC | 0.951 | Reproduced by `scripts/06_adversarial_eval.py`; results saved in `results/adversarial_results.csv` (paraphrase row AUC = 0.951). |
+| GPT-4 detection | AUC | 0.983 | Per-model evaluation in paper. |
+| Throughput | Speed | 100 texts/sec | CPU, no GPU. |
 
 ### 2. Multi-Benchmark Evaluation Results
 
