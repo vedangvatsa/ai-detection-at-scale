@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import joblib
-from tool.feature_extractor import extract_features
+from tool.feature_extractor import extract_features, ORIGINAL_FEATURE_COLS
 from tool.neural_detector import compute_perplexity_and_burstiness
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', 'models')
@@ -47,9 +47,7 @@ def predict_hybrid(text: str, register: str = "all") -> float:
     if feats is None:
         return 0.5 # Neutral fallback
         
-    stylo_vector = [feats[k] for k in ['mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
-                                      'connector_density', 'hedge_density', 'mean_sent_len',
-                                      'boost_density', 'char_entropy', 'rep_rate', 'punct_entropy']]
+    stylo_vector = [feats[k] for k in ORIGINAL_FEATURE_COLS]
                                       
     # 2. Extract Perplexity and Burstiness (offline cache-friendly)
     try:

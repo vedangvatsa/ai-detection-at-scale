@@ -16,7 +16,7 @@ DATA_DIR = os.path.join(SCRIPT_DIR, '..', 'data')
 RESULTS_DIR = os.path.join(SCRIPT_DIR, '..', 'results')
 
 sys.path.insert(0, PROJECT_DIR)
-from tool.feature_extractor import extract_features, normalize_unicode
+from tool.feature_extractor import extract_features
 
 RANDOM_SEED = 42
 

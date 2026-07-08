@@ -10,6 +10,7 @@ Outputs:
   results/tpr_at_low_fpr.csv
 """
 import os
+import sys
 import json
 import joblib
 import numpy as np
@@ -17,16 +18,16 @@ import pandas as pd
 from sklearn.metrics import roc_curve
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(SCRIPT_DIR, '..', 'data')
-RESULTS_DIR = os.path.join(SCRIPT_DIR, '..', 'results')
-MODELS_DIR = os.path.join(SCRIPT_DIR, '..', 'models')
+PROJECT_DIR = os.path.join(SCRIPT_DIR, '..')
+DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+RESULTS_DIR = os.path.join(PROJECT_DIR, 'results')
+MODELS_DIR = os.path.join(PROJECT_DIR, 'models')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-FEATURE_COLS = [
-    'mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
-    'connector_density', 'hedge_density', 'mean_sent_len', 'boost_density',
-    'char_entropy', 'rep_rate', 'punct_entropy',
-]
+sys.path.insert(0, PROJECT_DIR)
+from tool.feature_extractor import ORIGINAL_FEATURE_COLS
+
+FEATURE_COLS = ORIGINAL_FEATURE_COLS
 
 FPR_TARGETS = [0.0001, 0.001, 0.005, 0.01, 0.05]
 

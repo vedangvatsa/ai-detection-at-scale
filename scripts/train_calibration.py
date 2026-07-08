@@ -25,14 +25,10 @@ MODELS_DIR = os.path.join(PROJECT_DIR, 'models')
 RESULTS_DIR = os.path.join(PROJECT_DIR, 'results')
 
 sys.path.insert(0, PROJECT_DIR)
-from tool.feature_extractor import extract_feature_vector
+from tool.feature_extractor import extract_feature_vector, ORIGINAL_FEATURE_COLS
 from tool.register_classifier import load_models_from_manifest, classify_register
 
-FEATURE_COLS = [
-    'mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
-    'connector_density', 'hedge_density', 'mean_sent_len', 'boost_density',
-    'char_entropy', 'rep_rate', 'punct_entropy',
-]
+FEATURE_COLS = ORIGINAL_FEATURE_COLS
 
 
 def _ece(y_true, y_prob, n_bins=10):

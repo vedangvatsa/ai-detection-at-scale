@@ -11,11 +11,9 @@ import joblib
 PROJECT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, PROJECT_DIR)
 
-from tool.feature_extractor import extract_features
+from tool.feature_extractor import extract_features, ORIGINAL_FEATURE_COLS
 
-FEATURE_COLS = ['mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
-                'connector_density', 'hedge_density', 'mean_sent_len',
-                'boost_density', 'char_entropy', 'rep_rate', 'punct_entropy']
+FEATURE_COLS = ORIGINAL_FEATURE_COLS
 
 def main():
     print("Loading model...")

@@ -14,7 +14,7 @@ Outputs:
   results/ablation_tests.csv
   results/computational_cost.csv
 """
-import os, time, warnings
+import os, sys, time, warnings
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -28,18 +28,18 @@ from sklearn.pipeline import Pipeline
 warnings.filterwarnings('ignore')
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(SCRIPT_DIR, '..', 'data')
-RESULTS_DIR = os.path.join(SCRIPT_DIR, '..', 'results')
+PROJECT_DIR = os.path.join(SCRIPT_DIR, '..')
+DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+RESULTS_DIR = os.path.join(PROJECT_DIR, 'results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
+
+sys.path.insert(0, PROJECT_DIR)
+from tool.feature_extractor import ORIGINAL_FEATURE_COLS
 
 RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 
-FEATURE_COLS = [
-    'mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
-    'connector_density', 'hedge_density', 'mean_sent_len', 'boost_density',
-    'char_entropy', 'rep_rate', 'punct_entropy',
-]
+FEATURE_COLS = ORIGINAL_FEATURE_COLS
 
 FEATURE_LABELS = {
     'mtld': 'Lexical Diversity (MTLD)',

@@ -5,6 +5,7 @@ Predicts the source model group (human, openai, llama, mistral, cohere, mpt)
 using the 11 stylometric features.
 """
 import os
+import sys
 import joblib
 import pandas as pd
 import numpy as np
@@ -15,14 +16,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(SCRIPT_DIR, '..', 'data')
-MODELS_DIR = os.path.join(SCRIPT_DIR, '..', 'models')
+PROJECT_DIR = os.path.join(SCRIPT_DIR, '..')
+DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+MODELS_DIR = os.path.join(PROJECT_DIR, 'models')
 
-FEATURE_COLS = [
-    'mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
-    'connector_density', 'hedge_density', 'mean_sent_len', 'boost_density',
-    'char_entropy', 'rep_rate', 'punct_entropy',
-]
+sys.path.insert(0, PROJECT_DIR)
+from tool.feature_extractor import ORIGINAL_FEATURE_COLS
+
+FEATURE_COLS = ORIGINAL_FEATURE_COLS
 
 def map_model_group(model_name):
     if not isinstance(model_name, str):

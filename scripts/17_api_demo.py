@@ -34,6 +34,7 @@ def main():
     print("Starting API server...")
     env = os.environ.copy()
     env['PYTHONPATH'] = PROJECT_DIR
+    env.setdefault('API_KEY', '')  # Disable API-key auth for this local demo
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "tool.api:app", "--host", "127.0.0.1", "--port", "8000"],
         stdout=subprocess.PIPE,
@@ -42,6 +43,7 @@ def main():
         env=env,
     )
 
+    server_ready = False
     try:
         # Wait for server to start (model loading can take 10-30s)
         print("Waiting for API server to start...")
@@ -49,9 +51,13 @@ def main():
             try:
                 r = requests.get(f"{API_URL}/health", timeout=1)
                 if r.status_code == 200:
+                    server_ready = True
                     break
             except requests.exceptions.ConnectionError:
                 time.sleep(1)
+
+        if not server_ready:
+            raise RuntimeError("API server failed to start within 30 seconds.")
 
         # Health check
         print("\n--- Health check ---")

@@ -39,13 +39,9 @@ MODELS_DIR = os.path.join(SCRIPT_DIR, '..', 'models')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 sys.path.insert(0, PROJECT_DIR)
-from tool.feature_extractor import extract_feature_vector, normalize_unicode
+from tool.feature_extractor import extract_feature_vector, ORIGINAL_FEATURE_COLS
 
-FEATURE_COLS = [
-    'mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
-    'connector_density', 'hedge_density', 'mean_sent_len', 'boost_density',
-    'char_entropy', 'rep_rate', 'punct_entropy',
-]
+FEATURE_COLS = ORIGINAL_FEATURE_COLS
 
 RANDOM_SEED = 42
 random.seed(RANDOM_SEED)

@@ -13,7 +13,7 @@ Outputs:
   results/adversarial_results.csv
   results/adversarial_by_attack.csv
 """
-import os, time, warnings, re, math
+import os, sys, time, warnings, re, math
 import numpy as np
 import pandas as pd
 from collections import Counter
@@ -23,18 +23,18 @@ from sklearn.model_selection import train_test_split
 warnings.filterwarnings('ignore')
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(SCRIPT_DIR, '..', 'data')
-RESULTS_DIR = os.path.join(SCRIPT_DIR, '..', 'results')
+PROJECT_DIR = os.path.join(SCRIPT_DIR, '..')
+DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+RESULTS_DIR = os.path.join(PROJECT_DIR, 'results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
+
+sys.path.insert(0, PROJECT_DIR)
+from tool.feature_extractor import ORIGINAL_FEATURE_COLS
 
 RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 
-FEATURE_COLS = [
-    'mtld', 'sent_cv', 'self_mention_density', 'opener_ratio',
-    'connector_density', 'hedge_density', 'mean_sent_len', 'boost_density',
-    'char_entropy', 'rep_rate', 'punct_entropy',
-]
+FEATURE_COLS = ORIGINAL_FEATURE_COLS
 
 # Word lists from the feature extraction script
 HEDGE_WORDS = set('may might maybe perhaps possibly probably likely appears seems suggests could would should about approximate approximately virtually virtually generally relatively somewhat rather quite nearly almost apparently presumably supposedly allegedly reportedly presumably'.split())

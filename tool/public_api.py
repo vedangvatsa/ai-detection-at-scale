@@ -59,9 +59,7 @@ def list_public_detectors(request: Request):
     return PublicDetectorsResponse(detectors=list(MODELS.keys()))
 
 
-@app.post("/detect/public", response_model=PublicDetectResponse)
-def detect_public(req: PublicDetectRequest, request: Request):
-    _check_public_request(request)
+def _detect_public_single(req: PublicDetectRequest) -> PublicDetectResponse:
     if req.detector not in MODELS:
         raise HTTPException(
             status_code=400,
@@ -81,31 +79,18 @@ def detect_public(req: PublicDetectRequest, request: Request):
     )
 
 
+@app.post("/detect/public", response_model=PublicDetectResponse)
+def detect_public(req: PublicDetectRequest, request: Request):
+    _check_public_request(request)
+    return _detect_public_single(req)
+
+
 @app.post("/detect/public/batch", response_model=List[PublicDetectResponse])
 def detect_public_batch(reqs: List[PublicDetectRequest], request: Request):
     _check_public_request(request)
     if len(reqs) > 100:
         raise HTTPException(status_code=400, detail="Batch size limit: 100 texts.")
-    results = []
-    for req in reqs:
-        if req.detector not in MODELS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unknown detector '{req.detector}'. Available: {list(MODELS.keys())}",
-            )
-        t0 = time.time()
-        try:
-            prob = predict_ai_probability(req.text, req.detector)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Public detector inference failed: {e}")
-        elapsed_ms = (time.time() - t0) * 1000
-        results.append(PublicDetectResponse(
-            ai_probability=prob,
-            detector=req.detector,
-            is_ai=prob >= req.threshold,
-            processing_time_ms=round(elapsed_ms, 2),
-        ))
-    return results
+    return [_detect_public_single(req) for req in reqs]
 
 
 if __name__ == '__main__':

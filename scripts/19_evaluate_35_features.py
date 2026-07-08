@@ -17,7 +17,7 @@ DATA_DIR = os.path.join(SCRIPT_DIR, '..', 'data')
 RESULTS_DIR = os.path.join(SCRIPT_DIR, '..', 'results')
 
 sys.path.insert(0, PROJECT_DIR)
-from tool.feature_extractor import extract_features, normalize_unicode, ORIGINAL_FEATURE_COLS, EXTENDED_FEATURE_COLS
+from tool.feature_extractor import extract_features, ORIGINAL_FEATURE_COLS, EXTENDED_FEATURE_COLS
 
 RANDOM_SEED = 42
 SAMPLE_SIZE = 10000  # Small sample for memory efficiency

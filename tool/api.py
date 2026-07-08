@@ -49,6 +49,8 @@ from tool.adversarial_defense import normalize_text_defensive
 from tool.calibration import calibrate_probability
 from tool.register_classifier import classify_register
 
+SENSITIVITY_THRESHOLDS = {'high': 0.35, 'normal': 0.50, 'low': 0.70}
+
 # ── Paths ──────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -329,12 +331,8 @@ def detect(req: DetectRequest, request: Request):
 
     # Map sensitivity to threshold
     sens = getattr(req, 'sensitivity', 'normal').lower()
-    if sens == 'high':
-        threshold = 0.35
-    elif sens == 'low':
-        threshold = 0.70
-    else:
-        threshold = 0.50
+    threshold = SENSITIVITY_THRESHOLDS.get(sens, SENSITIVITY_THRESHOLDS['normal'])
+    if sens not in SENSITIVITY_THRESHOLDS:
         sens = 'normal'
 
     res = {
@@ -371,12 +369,8 @@ def detect_batch(req: BatchDetectRequest, request: Request):
 
     # Map sensitivity to threshold
     sens = getattr(req, 'sensitivity', 'normal').lower()
-    if sens == 'high':
-        threshold = 0.35
-    elif sens == 'low':
-        threshold = 0.70
-    else:
-        threshold = 0.50
+    threshold = SENSITIVITY_THRESHOLDS.get(sens, SENSITIVITY_THRESHOLDS['normal'])
+    if sens not in SENSITIVITY_THRESHOLDS:
         sens = 'normal'
 
     results = []
