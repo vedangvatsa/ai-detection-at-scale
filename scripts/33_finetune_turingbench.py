@@ -34,6 +34,8 @@ def parse_args():
                         help="Training epochs")
     parser.add_argument("--batch_size", type=int, default=16,
                         help="Per-device batch size")
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=1,
+                        help="Number of gradient accumulation steps")
     parser.add_argument("--learning_rate", type=float, default=2e-5,
                         help="Learning rate")
     parser.add_argument("--max_train_samples", type=int, default=None,
@@ -145,6 +147,7 @@ def main():
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size * 2,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
         learning_rate=args.learning_rate,
         warmup_ratio=0.1,
         weight_decay=0.01,
@@ -192,6 +195,8 @@ def main():
         "max_length": args.max_length,
         "epochs": args.epochs,
         "batch_size": args.batch_size,
+        "gradient_accumulation_steps": args.gradient_accumulation_steps,
+        "effective_batch_size": args.batch_size * args.gradient_accumulation_steps,
         "learning_rate": args.learning_rate,
         "val_auc": eval_result.get("eval_auc", None),
         "val_accuracy": eval_result.get("eval_accuracy", None),
