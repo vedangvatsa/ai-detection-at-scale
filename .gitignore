@@ -7,6 +7,11 @@ models/*.joblib
 models/beemo_semantic_model/
 models/public/
 models/hf_cache/
+models/turingbench_roberta_large/
+models/turingbench_roberta_test/
+
+# Kaggle output downloads (large, can be regenerated from Kaggle)
+kaggle_output/
 
 # Duplicate / cache directories
 ai-detection-at-scale/

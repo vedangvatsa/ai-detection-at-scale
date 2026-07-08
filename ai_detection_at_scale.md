@@ -578,6 +578,8 @@ The public detector results show strong complementarity with the stylometric sys
 
 We also evaluated the MAGE paper's Longformer detector (`nealcly/detection-longformer`) at 512 tokens on the MAGE test split. At 2000 samples, this model achieves AUC 0.980 and accuracy 0.894, raising the MAGE benchmark from 0.780 (public detector + stylometric ensemble) to near the published SOTA ceiling. On TuringBench the same Longformer reaches only 0.673, confirming that the model specializes to the MAGE distribution and does not generalize across the 19 generators in TuringBench.
 
+To push TuringBench performance further, we fine-tuned a `roberta-large` model on the full TuringBench 19-generator training split (331k texts) on Kaggle. The model was trained for 1 epoch with a max length of 256 and a batch size of 48, and evaluated on the validation split. This fine-tuned model achieves **AUC 0.9991** and **accuracy 0.9948** on TuringBench validation, improving over the `roberta-large-openai-detector` zero-shot result of 0.9146 AUC and 0.6665 accuracy. The model weights are saved locally at `models/turingbench_roberta_large/` (1.3 GB) and on Kaggle output. This confirms that fine-tuning on the target distribution yields a near-ceiling detector for TuringBench, while still leaving MAGE as the benchmark where specialized architectures (the MAGE Longformer) provide the largest gain.
+
 ### 5.13 Deployment System Architecture
 
 The analyses in Sections 5.1 through 5.12 establish the components needed for a production AI detection system.

@@ -1,0 +1,2 @@
+model,output_dir,max_length,epochs,batch_size,learning_rate,val_auc,val_accuracy
+roberta-large,/kaggle/working/models/turingbench_roberta_large,256,1,48,2e-05,0.9990838681124142,0.9947531086034643

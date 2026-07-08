@@ -173,6 +173,20 @@ The MAGE paper's Longformer detector (`nealcly/detection-longformer`) evaluated 
 
 MAGE jumps from **0.7801** (public detector + stylometric ensemble) to **0.9796** with the MAGE Longformer at 2000 samples, matching published SOTA. TuringBench remains best with `roberta-large-openai-detector` (**0.9146**); the MAGE Longformer does not generalize across generators.
 
+## TuringBench Fine-Tuned RoBERTa-large
+
+A `roberta-large` model was fine-tuned on the full TuringBench 19-generator training split (331k texts) on Kaggle and evaluated on the validation split:
+
+| Model | Training data | Max length | Epochs | Batch size | Validation AUC | Validation Accuracy |
+|---|---|---|---|---|---|---|
+| **Fine-tuned roberta-large** | TuringBench train (full) | 256 | 1 | 48 | **0.9991** | **0.9948** |
+| `roberta-large-openai-detector` (zero-shot) | — | 512 | — | — | 0.9146 | 0.6665 |
+
+- Fine-tuning improves TuringBench validation AUC from **0.9146** to **0.9991** (+0.0845) and accuracy from **0.6665** to **0.9948** (+0.3283).
+- The model was trained on Kaggle using `notebooks/kaggle_turingbench_finetune/kaggle_turingbench_finetune.ipynb` and the script `scripts/33_finetune_turingbench.py`.
+- Model weights are stored locally at `models/turingbench_roberta_large/` (1.3 GB, git-ignored) and on Kaggle output.
+- Results are saved in `results/turingbench_finetuned.csv`.
+
 ## API Demonstration
 
 The FastAPI inference endpoint (`tool/api.py`) was verified locally:
