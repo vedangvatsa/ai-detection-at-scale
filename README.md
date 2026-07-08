@@ -70,6 +70,20 @@ A `roberta-large` model was fine-tuned on the full TuringBench 19-generator trai
 * The fine-tuned model weights are saved on Kaggle; the local copy is at `models/turingbench_roberta_large/` (1.3 GB, git-ignored). Kaggle notebook: `notebooks/kaggle_turingbench_finetune/kaggle_turingbench_finetune.ipynb`.
 * Results are saved in `results/turingbench_finetuned.csv`.
 
+### 6. DeBERTa-v3-large Fine-Tuning & Ensemble (In Progress)
+
+A `microsoft/deberta-v3-large` model is being fine-tuned on the full TuringBench training split with 512 tokens, 3 epochs, batch 8, and gradient accumulation 8 (effective batch 64) on Kaggle. Earlier attempts on Kaggle P100 failed due to FP16 incompatibility, so the current run uses FP32.
+
+| Artifact | Location |
+|---|---|
+| Fine-tuning script | `scripts/33_finetune_turingbench.py` |
+| Kaggle fine-tuning notebook | `notebooks/kaggle_turingbench_finetune/kaggle_turingbench_finetune.ipynb` |
+| Ensemble training script | `scripts/ensemble_turingbench.py` |
+| Kaggle ensemble notebook | `notebooks/kaggle_turingbench_ensemble/kaggle_turingbench_ensemble.ipynb` |
+| Run monitor | `scripts/monitor_kaggle_deberta.py` |
+
+The ensemble script combines multiple fine-tuned models with a logistic regression over their AI-class probabilities.
+
 ---
 
 ## Production Features & API Suite
