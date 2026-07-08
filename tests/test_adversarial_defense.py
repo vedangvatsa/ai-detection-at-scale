@@ -16,7 +16,7 @@ def test_homoglyph_normalization():
 
 
 def test_zero_width_chars_removed():
-    text = "test\u200b\u200ctext\ufeff"
+    text = "test \u200b\u200c text \ufeff"
     cleaned = normalize_text_defensive(text)
     assert cleaned == "test text", f"Got: {cleaned}"
 

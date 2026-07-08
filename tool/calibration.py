@@ -1,11 +1,10 @@
 import os
 import math
-import joblib
-import numpy as np
 
 _CALIBRATION_MODEL = None
 
 def _load_calibration_model():
+    import joblib
     global _CALIBRATION_MODEL
     if _CALIBRATION_MODEL is not None:
         return _CALIBRATION_MODEL
@@ -46,6 +45,7 @@ def calibrate_probability(probability: float, word_count: int, target_length: in
         return _heuristic_calibrate(probability, word_count, target_length, steepness)
 
     try:
+        import numpy as np
         cal_type = model.get('type', 'platt')
         if cal_type == 'platt':
             clf = model['platt']

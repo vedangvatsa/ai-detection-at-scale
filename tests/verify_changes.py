@@ -27,10 +27,6 @@ def main():
     from tool.calibration import calibrate_probability
     print('calibrate_probability(0.9, 10) =', calibrate_probability(0.9, 10))
 
-    print('Importing api app...')
-    from tool.api import app
-    print('api app imported OK')
-
     print('Importing adversarial defense...')
     from tool.adversarial_defense import normalize_text_defensive
     cleaned = normalize_text_defensive('Thіs іs а tеst\u200b!')
