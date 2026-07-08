@@ -51,7 +51,7 @@ This study distinguishes five registers rather than five domains. Register is a 
 
 The five registers and their operational definitions are as follows.
 
-**Academic.** Formally structured text presenting original research or summarizing scientific findings. Characterized by hedging language, passive constructions, and precise domain vocabulary. Source: arXiv abstracts via the ccdv/arxiv-summarization dataset.
+**Academic.** Formally structured text presenting original research or summarizing scientific findings. Characterized by hedging language, passive constructions, and precise domain vocabulary. Source. ArXiv abstracts via the ccdv/arxiv-summarization dataset.
 
 **News.** Informative prose reporting events or facts for a general audience. Characterized by inverted-pyramid structure, minimal hedging, and high connector density. Source: CC-News (stanford-oval/ccnews).
 
@@ -81,7 +81,7 @@ The five registers and their operational definitions are as follows.
 | Encyclopedic | 94,631 | 0 | 94,631 | (human only) |
 | Creative | 102,749 | 442,672 | 545,421 | 11 models |
 
-Note on encyclopedic and corpus length distribution: RAID does not contain encyclopedic-register AI texts in the train split used, so that register is excluded from binary classification. Human texts and RAID AI texts differ substantially in median document length: academic human texts (arXiv abstracts) have a median of 6.0 sentences while RAID academic AI texts have a median of 9.1 sentences; news human texts (CC-News) have a median of 14.0 sentences versus 11.4 for RAID AI news. This length difference affects document-level features (MTLD, sentence CV, opener ratio) and is reported as a confounding factor in Section 5. Features normalized per 1,000 words (connector density, hedge density, self-mention density, booster density) are less affected.
+Note on encyclopedic and corpus length distribution: RAID does not contain encyclopedic-register AI texts in the train split used, so that register is excluded from binary classification. Human texts and RAID AI texts differ substantially in median document length. Academic human texts (arXiv abstracts) have a median of 6.0 sentences while RAID academic AI texts have a median of 9.1 sentences; news human texts (CC-News) have a median of 14.0 sentences versus 11.4 for RAID AI news. This length difference affects document-level features (MTLD, sentence CV, opener ratio) and is reported as a confounding factor in Section 5. Features normalized per 1,000 words (connector density, hedge density, self-mention density, booster density) are less affected.
 
 **Minimum length thresholds.** Academic: 100 words. News: 100 words. Social: 30 words. Encyclopedic: 80 words. Creative: 80 words. Texts below threshold were excluded. MTLD was computed only for texts with at least 50 words; shorter texts received NaN for this feature and were excluded from MTLD-dependent analyses.
 
@@ -153,7 +153,7 @@ The clearest result is that only two features show a consistent sign (same direc
 
 Opener ratio shows the largest Cohen's d overall (mean |d| = 0.71), dominated by the academic register effect. RAID academic AI texts use sentence-opening connectors at a far higher rate than arXiv abstracts. The effect is much smaller in news (d = 0.55) and social (d = 0.17).
 
-Sentence CV has the second-largest mean |d| (0.67) but reverses sign: near-zero in academic (d = 0.01) and negative in news, social, and creative (AI texts have more uniform sentence length than human texts in these registers). This sign reversal means sentence CV is register-dependent.
+Sentence CV has the second-largest mean |d| (0.67) but reverses sign. Near-zero in academic (d = 0.01) and negative in news, social, and creative (AI texts have more uniform sentence length than human texts in these registers). This sign reversal means sentence CV is register-dependent.
 
 MTLD shows near-zero effects across all registers (mean |d| = 0.10), making it the least discriminative feature in this corpus.
 
@@ -177,7 +177,7 @@ Table 3 presents the four-by-four cross-domain AUC matrix for the full eleven-fe
 | Creative | 0.705 | 0.796 | 0.688 | **1.000** | 0.730 |
 | Mean off-diag | 0.789 | 0.763 | 0.663 | 0.697 | **0.728** |
 
-Note: Encyclopedic register excluded from binary classification (no AI texts in this register's RAID split). All values are AUC-ROC from the held-out test portion of the target register. Within-register AUC = 1.000 reflects the strong document-length confound described in Section 3.2 and discussed in Section 5.
+Note. Encyclopedic register excluded from binary classification (no AI texts in this register's RAID split). All values are AUC-ROC from the held-out test portion of the target register. Within-register AUC = 1.000 reflects the strong document-length confound described in Section 3.2 and discussed in Section 5.
 
 The diagonal mean is 1.000 (perfect classification within register), and the off-diagonal mean is 0.728, giving a mean generalization cost of 0.272 AUC points. The near-perfect within-register AUC reflects the document-length confound, as human and AI texts in this corpus differ substantially in median length per register (Section 3.2). The cross-domain AUC (0.728) is less inflated because the length distributions may vary across registers. Social is the hardest target register in cross-domain transfer (mean off-diagonal AUC = 0.663), while news trained on social achieves 0.842, suggesting that news and social registers share discriminable patterns.
 
@@ -309,9 +309,9 @@ The results in Section 4 are based on the full corpus, where human and AI texts 
 | Creative | 92,603 | 92,603 | 185,206 |
 | **Total** | **596,305** | **596,305** | **1,192,610** |
 
-Note: Academic register has fewer matched texts due to the small AI text count (8,343) in RAID's academic subset. Encyclopedic register excluded (no AI texts).
+Note. Academic register has fewer matched texts due to the small AI text count (8,343) in RAID's academic subset. Encyclopedic register excluded (no AI texts).
 
-**Effect sizes.** Table 8 reports Cohen's d for the length-matched subset. The sign consistency analysis reveals a notable change: four features now show consistent signs across all four registers (opener ratio, connector density, sentence CV, and character n-gram entropy), compared to only three in the unmatched analysis. Sentence CV is consistently negative (AI texts have more uniform sentence length than human texts in all registers), and character n-gram entropy is consistently negative (AI text is more predictable at the character level). MTLD, which was consistent in the unmatched analysis, now reverses sign in academic (d = -0.17), suggesting its previous consistency was an artifact of the length confound.
+**Effect sizes.** Table 8 reports Cohen's d for the length-matched subset. The sign consistency analysis reveals a notable change. Four features now show consistent signs across all four registers (opener ratio, connector density, sentence CV, and character n-gram entropy), compared to only three in the unmatched analysis. Sentence CV is consistently negative (AI texts have more uniform sentence length than human texts in all registers), and character n-gram entropy is consistently negative (AI text is more predictable at the character level). MTLD, which was consistent in the unmatched analysis, now reverses sign in academic (d = -0.17), suggesting its previous consistency was an artifact of the length confound.
 
 **Table 8. Effect Sizes (Cohen's d) for Length-Matched Subset**
 
@@ -365,7 +365,7 @@ Figure 8 presents this matrix as a heatmap.
 
 ![Four-by-four cross-domain AUC transfer matrix for the length-matched subset. Diagonal cells show within-register performance; off-diagonal cells show cross-domain transfer AUC. The off-diagonal mean is 0.716, slightly lower than the unmatched analysis (0.728).](results/figures/fig8_cross_domain_auc_matched.png)
 
-**Ablation.** Table 11 reports the ablation results on the length-matched subset. The feature ranking changes: sentence CV is now the top single feature (AUC = 0.789), consistent with its consistent negative sign across registers. The top-4 set (sentence CV, char entropy, hedge density, connector density) achieves AUC = 0.894, and the full 11-feature set reaches 0.960.
+**Ablation.** Table 11 reports the ablation results on the length-matched subset. The feature ranking changes. Sentence CV is now the top single feature (AUC = 0.789), consistent with its consistent negative sign across registers. The top-4 set (sentence CV, char entropy, hedge density, connector density) achieves AUC = 0.894, and the full 11-feature set reaches 0.960.
 
 **Table 11. Ablation: AUC by Feature Set Size (Length-Matched, All-Register 5-Fold CV)**
 
@@ -434,7 +434,7 @@ A critical question for practitioners is whether the features detect modern mode
 | Cohere | N/A | 0.971 | 0.921 | 0.975 | 0.956 |
 | Cohere-Chat | N/A | 0.969 | 0.916 | 0.981 | 0.955 |
 
-Note: Academic register only has GPT-3.5 AI texts (8,343). All other models are absent from RAID's academic subset. N/A indicates insufficient data.
+Note. Academic register only has GPT-3.5 AI texts (8,343). All other models are absent from RAID's academic subset. N/A indicates insufficient data.
 
 The key finding is that **GPT-4 is detectable at AUC 0.983**, the highest among all models alongside GPT-3 and MPT. Its stylistic profile (high connector density, uniform sentence rhythm, predictable character distributions) diverges consistently from human writing across all three registers where it appears. The hardest models to detect are Cohere variants (AUC 0.955 to 0.956), which produce more human-like stylistic profiles. GPT-2, the oldest model, is not the easiest to detect (AUC 0.969).
 
@@ -558,7 +558,7 @@ Table 19 compares the stylometric approach to published neural detector numbers 
 | DetectGPT (T5) | Neural | 0.850 | 0.550 | 0.30 (acc@FPR=5%) | 1 | No |
 | N-gram + SVM | Statistical | 0.900 | 0.680 | 0.60 (est.) | 500 | No |
 
-Note: Neural detector values are from the Kaggle version 6 output (Vedang Vatsa, 2026), which uses published benchmark numbers from Dugan et al. [4] and Hans et al. [21]. Adversarial values for neural detectors are accuracy at FPR=5% from the RAID shared task [4]. The stylometric adversarial value is AUC from this paper's evaluation. N-gram + SVM values are estimates.
+Note. Neural detector values are from the Kaggle version 6 output (Vedang Vatsa, 2026), which uses published benchmark numbers from Dugan et al. [4] and Hans et al. [21]. Adversarial values for neural detectors are accuracy at FPR=5% from the RAID shared task [4]. The stylometric adversarial value is AUC from this paper's evaluation. N-gram + SVM values are estimates.
 
 The stylometric approach achieves higher within-register AUC (0.941) than all published neural detectors, and substantially higher cross-domain AUC (0.728 vs 0.55 to 0.70). The clearest difference is in adversarial resilience. The stylometric classifier retains AUC 0.951 under paraphrase attacks, while RADAR drops to 0.40 accuracy at FPR=5% and Binoculars to 0.55. Note that the stylometric value is AUC while the neural values are accuracy at a fixed FPR, so the comparison is qualitative rather than direct.
 
@@ -615,7 +615,6 @@ Future work should include (1) extending the register set to include encyclopedi
 ---
 
 ## References
-
 [1] Uchendu, A., Le, T., Tian, K., & Lee, D. (2020). "Authorship Attribution for Neural Text Generation." *Proceedings of EMNLP 2020*, 8384-8395. [https://aclanthology.org/2020.emnlp-main.673](https://aclanthology.org/2020.emnlp-main.673)
 
 [2] Gehrmann, S., Strobelt, H., & Rush, A. M. (2019). "GLTR: Statistical Detection and Visualization of Generated Text." *Proceedings of ACL 2019*, 111-116. [https://aclanthology.org/P19-3019](https://aclanthology.org/P19-3019)
