@@ -79,11 +79,11 @@ NEGATIVE_WORDS = {
     'bad', 'terrible', 'awful', 'horrible', 'worst', 'worse', 'hate',
     'hated', 'disappointing', 'disappointed', 'disappointment', 'poor',
     'poorly', 'fail', 'failed', 'failure', 'wrong', 'incorrect', 'error',
-    'error', 'flaw', 'flawed', 'defective', 'negative', 'harmful',
+    'flaw', 'flawed', 'defective', 'negative', 'harmful',
     'damaging', 'concerning', 'troubling', 'problematic', 'inadequate',
     'insufficient', 'ineffective', 'inefficient', 'useless', 'pointless',
     'boring', 'dull', 'uninteresting', 'confusing', 'confused', 'unclear',
-    'vague', 'ambiguous', 'questionable', 'dubious', 'flawed', 'weak',
+    'vague', 'ambiguous', 'questionable', 'dubious', 'weak',
 }
 
 PREPOSITIONS = {

@@ -167,9 +167,12 @@ app = FastAPI(
 )
 
 # CORS configuration
+# CORS configuration (restrict in production via CORS_ORIGINS env var)
+_cors_origins_env = os.environ.get("CORS_ORIGINS", "")
+CORS_ORIGINS = [o.strip() for o in _cors_origins_env.split(",") if o.strip()] or ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for dev/web client integration
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -227,19 +230,35 @@ def features():
 
 # ── In-Memory Cache and Rate Limiting ──────────────────────────────────────
 
-RESPONSE_CACHE = {}  # key (hash) -> dict
+RESPONSE_CACHE = {}  # key (hash) -> {"data": dict, "ts": float}
+DEFAULT_CACHE_TTL_SECONDS = float(os.environ.get("CACHE_TTL_SECONDS", "3600"))
+MAX_CACHE_ENTRIES = int(os.environ.get("MAX_CACHE_ENTRIES", "1000"))
 
 def get_cache_key(text: str, register: Optional[str]) -> str:
     raw_key = f"{text}||{register or ''}"
     return hashlib.md5(raw_key.encode('utf-8')).hexdigest()
 
+def _is_stale(entry: dict) -> bool:
+    return (time.time() - entry["ts"]) > DEFAULT_CACHE_TTL_SECONDS
+
 def set_cache(key: str, data: dict):
-    if len(RESPONSE_CACHE) > 1000:
+    # Evict stale entries first
+    stale_keys = [k for k, v in RESPONSE_CACHE.items() if _is_stale(v)]
+    for k in stale_keys:
+        RESPONSE_CACHE.pop(k, None)
+    if len(RESPONSE_CACHE) >= MAX_CACHE_ENTRIES:
         first_key = next(iter(RESPONSE_CACHE))
         RESPONSE_CACHE.pop(first_key)
-    RESPONSE_CACHE[key] = data
+    RESPONSE_CACHE[key] = {"data": data, "ts": time.time()}
 
 RATE_LIMITS = {}  # ip -> {"tokens": float, "last_updated": float}
+API_KEY = os.environ.get("API_KEY", "")
+
+def _check_api_key(request: Request):
+    if not API_KEY:
+        return True
+    header_key = request.headers.get("x-api-key", "")
+    return header_key == API_KEY
 
 def check_rate_limit(ip: str) -> bool:
     now = time.time()
@@ -265,6 +284,8 @@ def check_rate_limit(ip: str) -> bool:
 
 @app.post("/detect", response_model=DetectResponse)
 def detect(req: DetectRequest, request: Request):
+    if not _check_api_key(request):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key.")
     # Rate Limiting
     ip = request.client.host if request.client else "unknown"
     if not check_rate_limit(ip):
@@ -272,8 +293,8 @@ def detect(req: DetectRequest, request: Request):
         
     # Caching
     cache_key = get_cache_key(req.text, req.register)
-    if cache_key in RESPONSE_CACHE:
-        cached = RESPONSE_CACHE[cache_key].copy()
+    if cache_key in RESPONSE_CACHE and not _is_stale(RESPONSE_CACHE[cache_key]):
+        cached = RESPONSE_CACHE[cache_key]["data"].copy()
         cached["processing_time_ms"] = 0.0
         return cached
 
@@ -347,8 +368,12 @@ def detect(req: DetectRequest, request: Request):
     # Step 5: Sentence-level analysis
     sentences_data = analyze_sentences(text, detector, feature_cols=m['feature_cols']) if detector is not None else []
 
-    # Step 6: Neural perplexity & burstiness
-    neural_signals = compute_perplexity_and_burstiness(text)
+    # Step 6: Neural perplexity & burstiness (safe fallback if model not cached)
+    try:
+        neural_signals = compute_perplexity_and_burstiness(text)
+    except Exception as e:
+        print(f"Neural signal computation failed: {e}", file=sys.stderr)
+        neural_signals = {"perplexity": None, "burstiness": None, "error": str(e)}
 
     # Step 7: Model Attribution
     attribution = attribute_source(feat_vector, ai_probability)
@@ -390,7 +415,13 @@ def detect(req: DetectRequest, request: Request):
 
 
 @app.post("/detect/batch", response_model=BatchDetectResponse)
-def detect_batch(req: BatchDetectRequest):
+def detect_batch(req: BatchDetectRequest, request: Request):
+    if not _check_api_key(request):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key.")
+    ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(ip):
+        raise HTTPException(status_code=429, detail="Too many requests. Limit: 60 req/min.")
+
     m = get_models()
     t0 = time.time()
 

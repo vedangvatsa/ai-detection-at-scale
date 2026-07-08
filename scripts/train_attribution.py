@@ -12,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 DATA_DIR = "/Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/data"
 MODELS_DIR = "/Users/vedang/ZCodeProject/research-paper-framework/papers/ai-detection-at-scale/models"
@@ -71,6 +72,12 @@ def main():
     X = train_df[FEATURE_COLS].values
     y = train_df['group'].values
     
+    # Train/test split for evaluation
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    print(f"Train samples: {len(X_train)}, Test samples: {len(X_test)}")
+    
     # Create training pipeline
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
@@ -78,12 +85,35 @@ def main():
     ])
     
     print("Training attribution model...")
-    pipeline.fit(X, y)
+    pipeline.fit(X_train, y_train)
+    
+    # Evaluate on held-out test set
+    y_pred = pipeline.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    print(f"\nHeld-out accuracy: {acc:.4f}")
+    print("\nClassification report:")
+    print(classification_report(y_test, y_pred, digits=4))
+    print("Confusion matrix:")
+    print(confusion_matrix(y_test, y_pred, labels=sorted(train_df['group'].unique())))
     
     # Save the pipeline
+    os.makedirs(MODELS_DIR, exist_ok=True)
     out_path = os.path.join(MODELS_DIR, 'attribution_classifier.joblib')
     joblib.dump(pipeline, out_path)
-    print(f"Successfully saved attribution model to {out_path}")
+    print(f"\nSuccessfully saved attribution model to {out_path}")
+    
+    # Save metrics
+    metrics = {
+        'accuracy': float(acc),
+        'classification_report': classification_report(y_test, y_pred, digits=4, output_dict=True),
+        'confusion_matrix': confusion_matrix(y_test, y_pred, labels=sorted(train_df['group'].unique())).tolist(),
+        'labels': sorted(train_df['group'].unique().tolist()),
+    }
+    metrics_path = os.path.join(MODELS_DIR, 'attribution_metrics.json')
+    import json
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=2)
+    print(f"Saved attribution metrics to {metrics_path}")
 
 if __name__ == '__main__':
     main()

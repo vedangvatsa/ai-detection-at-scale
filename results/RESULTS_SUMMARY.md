@@ -16,7 +16,7 @@
 | Accuracy | 0.9011   | **0.9361** |
 | F1     | 0.8710     | **0.9168** |
 
-The 31-feature model improves AUC by **+0.018** over the 11-feature baseline.
+The 31-feature model improves AUC by **+0.018** over the 11-feature baseline. Source: `results/extended_feature_comparison.csv`.
 
 ## Low False-Positive Rate Performance (all registers, 200k texts)
 
@@ -30,19 +30,22 @@ The 31-feature model improves AUC by **+0.018** over the 11-feature baseline.
 
 Per-register numbers are in `results/tpr_at_low_fpr.csv`.
 
-## Humanization Robustness (adversarial attacks)
+## Adversarial Robustness (character-level defenses)
 
-| Attack strategy | AUC    | AUC drop |
-|-----------------|--------|----------|
-| clean baseline  | 0.9417 | —        |
-| remove connectors | 0.9340 | -0.0076 |
-| synonym swap    | 0.9403 | -0.0014 |
-| vary length     | 0.9400 | -0.0017 |
-| punctuation     | 0.9387 | -0.0030 |
-| first person    | 0.9398 | -0.0019 |
-| **combined**    | 0.9324 | **-0.0093** |
+The adversarial evaluation is run by `scripts/06_adversarial_eval.py` on the RAID adversarial test split. Results are saved in `results/adversarial_results.csv`.
 
-The combined humanization attack reduces AUC by less than 1 percentage point, showing strong robustness.
+| Attack type | AUC | Accuracy | F1 |
+|-------------|-----|----------|----|
+| homoglyph | 0.1835 | 0.6537 | 0.0000 |
+| insert_paragraphs | 0.9585 | 0.9457 | 0.9150 |
+| number | 0.9585 | 0.9464 | 0.9161 |
+| paraphrase | **0.9506** | 0.9129 | 0.8562 |
+| perplexity_misspelling | 0.9584 | 0.9464 | 0.9161 |
+| synonym | 0.9644 | 0.9524 | 0.9263 |
+| upper_lower | 0.9595 | 0.9464 | 0.9161 |
+| whitespace | 0.9592 | 0.9471 | 0.9173 |
+
+The paraphrase attack yields AUC 0.9506 on the stylometric RF, which is the basis for the headline paraphrase robustness number. The homoglyph attack causes catastrophic collapse (AUC 0.18) because the stylometric features are sensitive to Unicode substitution; `tool/adversarial_defense.py` normalizes homoglyphs and zero-width characters before inference. This is a **character-level preprocessing defense only**; it does not protect against semantic paraphrasing, prompt injection, synonym substitution, or back-translation.
 
 ## Per-Register Error Rates (31-feature model)
 
@@ -97,11 +100,11 @@ Comparison against industry neural detectors from Kaggle version 6 output:
 | N-gram + SVM (baseline) | statistical | 0.90 | 0.68 | 0.60 | 500 |
 
 Takeaways:
-- Our stylometric RF is **best on cross-domain generalization** (0.728) and **adversarial robustness** (0.951).
+- Our stylometric RF achieves **cross-domain AUC 0.728** on the full RAID corpus.
 - It is **200x faster** than Binoculars (100 vs 0.5 texts/sec) and fully interpretable.
 - It is competitive on within-register AUC (0.941) vs the strongest neural methods.
 
-Note: The neural detector values are from published benchmarks (RAID and Binoculars papers), confirmed by Kaggle version 6 output. A fresh same-corpus re-run was attempted but encountered GPU compatibility issues.
+Note: The neural detector values (Binoculars, RADAR, GPTZero, DetectGPT) are taken from their published benchmark papers, not from a same-corpus re-run. A same-corpus re-run was attempted but encountered GPU compatibility issues. The adversarial number (0.951) refers to the paraphrase attack evaluated on our stylometric RF in `results/adversarial_results.csv`; the other detectors' adversarial numbers are reported by their original authors under different experimental conditions.
 
 Notebook: [Kaggle notebook](https://www.kaggle.com/code/vedangvatsa123/ai-detection-binoculars-benchmark)
 
