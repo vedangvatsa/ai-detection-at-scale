@@ -18,6 +18,8 @@
 
 The 31-feature model improves AUC by **+0.018** over the 11-feature baseline. Source: `results/extended_feature_comparison.csv`.
 
+*Note: the codebase currently extracts **35** features (11 original + 24 extended, including 4 vocabulary-richness features added after the 31-feature experiments). The production API uses only the original 11 features as specified in `models/manifest.json`. The "31-feature" results in this table refer to the legacy extended feature set used to produce `extended_feature_comparison.csv`.*
+
 ## Low False-Positive Rate Performance (all registers, 200k texts)
 
 | FPR   | Threshold | TPR    |

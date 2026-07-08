@@ -17,6 +17,8 @@ FILES = [
     'scripts/train_attribution.py',
     'scripts/train_calibration.py',
     'scripts/download_assets.py',
+    'scripts/generate_checksums.py',
+    'scripts/audit_notebooks.py',
 ]
 
 
