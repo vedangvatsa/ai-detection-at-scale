@@ -109,6 +109,11 @@ def make_dataset(df, tokenizer, max_length):
     return ds.map(tokenize, batched=True, remove_columns=['text'])
 
 
+def has_hf_token():
+    """Return True if a HuggingFace write token is available."""
+    return bool(os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN"))
+
+
 def main():
     args = parse_args()
     torch.manual_seed(args.seed)
@@ -166,6 +171,15 @@ def main():
     if use_grad_ckpt:
         model.gradient_checkpointing_enable()
 
+    # Only push to Hub if a token is available; otherwise train locally and
+    # the saved model can be pushed later.
+    can_push = args.hub_model_id is not None and has_hf_token()
+    if args.hub_model_id is not None and not can_push:
+        print(
+            f"WARNING: --hub_model_id={args.hub_model_id} set but no HF_TOKEN found. "
+            "Training will continue but checkpoints will NOT be pushed to Hub."
+        )
+
     class WeightedTrainer(Trainer):
         def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
             labels = inputs.pop("labels")
@@ -196,9 +210,9 @@ def main():
         dataloader_num_workers=2,
         remove_unused_columns=False,
         fp16=use_fp16,
-        push_to_hub=args.hub_model_id is not None,
-        hub_model_id=args.hub_model_id,
-        hub_strategy="checkpoint",
+        push_to_hub=can_push,
+        hub_model_id=args.hub_model_id if can_push else None,
+        hub_strategy="checkpoint" if can_push else "every_save",
     )
 
     data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
