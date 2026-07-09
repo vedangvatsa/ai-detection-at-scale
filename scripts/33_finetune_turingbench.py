@@ -141,11 +141,20 @@ def main():
         label2id={"human": 0, "ai": 1},
     )
 
+    is_deberta = "deberta-v" in args.model_name.lower()
     use_fp16 = args.fp16 and not args.no_fp16 and torch.cuda.is_available()
     use_grad_ckpt = args.gradient_checkpointing and not args.no_gradient_checkpointing
+
+    # DeBERTa-v2/v3 with FP16 triggers a known gradient scaler error on many GPUs.
+    if is_deberta and use_fp16:
+        print(
+            "Warning: disabling FP16 for DeBERTa-v3 to avoid 'Attempting to unscale FP16 gradients' error."
+        )
+        use_fp16 = False
+
     # DeBERTa-v2/v3 with FP16 + gradient checkpointing triggers:
     #   ValueError: Attempting to unscale FP16 gradients.
-    if use_grad_ckpt and "deberta-v" in args.model_name.lower() and use_fp16:
+    if use_grad_ckpt and is_deberta and use_fp16:
         print(
             "Warning: disabling gradient checkpointing for DeBERTa-v3 with FP16 "
             "to avoid gradient scaler conflict."
