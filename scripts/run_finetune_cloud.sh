@@ -21,7 +21,7 @@ if [ -z "${HF_TOKEN:-}" ]; then
 fi
 
 HUB_SUFFIX="$(echo "$MODEL_NAME" | tr '/-' '_' | tr '[:upper:]' '[:lower:]')"
-HUB_MODEL_ID="${HF_USERNAME:-vedangvatsa123}/vedang-turingbench-${HUB_SUFFIX}"
+HUB_MODEL_ID="${HF_USERNAME:-vedangvatsa}/vedang-turingbench-${HUB_SUFFIX}"
 
 # Resume from Hub if a checkpoint exists
 RESUME_ARG=""
