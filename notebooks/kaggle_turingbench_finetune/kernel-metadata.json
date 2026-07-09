@@ -1,6 +1,6 @@
 {
-  "id": "vedangvatsa123/turingbench-deberta-v3-large-fine-tune",
-  "title": "TuringBench DeBERTa-v3-large Fine-tune",
+  "id": "vedangvatsa123/turingbench-roberta-large-fine-tune",
+  "title": "TuringBench RoBERTa-large Fine-tune",
   "code_file": "kaggle_turingbench_finetune.ipynb",
   "language": "python",
   "kernel_type": "notebook",
