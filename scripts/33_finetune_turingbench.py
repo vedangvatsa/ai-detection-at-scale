@@ -60,6 +60,10 @@ def parse_args():
                         help="Enable gradient checkpointing (default: True)")
     parser.add_argument("--no_gradient_checkpointing", action="store_true",
                         help="Disable gradient checkpointing")
+    parser.add_argument("--hub_model_id", type=str, default=None,
+                        help="HuggingFace Hub model ID to push checkpoints to")
+    parser.add_argument("--resume_from_checkpoint", type=str, default=None,
+                        help="Path or Hub model ID to resume training from")
     return parser.parse_args()
 
 
@@ -192,6 +196,10 @@ def main():
         dataloader_num_workers=2,
         remove_unused_columns=False,
         fp16=use_fp16,
+        push_to_hub=args.hub_model_id is not None,
+        hub_model_id=args.hub_model_id,
+        hub_strategy="checkpoint",
+        save_safetensors=True,
     )
 
     data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
@@ -207,7 +215,7 @@ def main():
     )
 
     print("Starting training...")
-    trainer.train()
+    trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
 
     print("Evaluating on validation set...")
     eval_result = trainer.evaluate()
