@@ -58,6 +58,40 @@ MODELS_DIR = os.path.join(PROJECT_DIR, 'models')
 
 # ── Model loading ──────────────────────────────────────────────────────────
 
+_feature_norms = None
+
+def load_feature_norms():
+    global _feature_norms
+    if _feature_norms is not None:
+        return _feature_norms
+    
+    norms_path = os.path.join(PROJECT_DIR, 'results', 'effect_sizes.csv')
+    if not os.path.exists(norms_path):
+        _feature_norms = {}
+        return _feature_norms
+        
+    norms = {}
+    import csv
+    with open(norms_path, mode='r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            reg = row['register']
+            feat = row['feature']
+            if reg not in norms:
+                norms[reg] = {}
+            try:
+                norms[reg][feat] = {
+                    'human_mean': float(row['human_mean']),
+                    'human_sd': float(row['human_sd']),
+                    'ai_mean': float(row['ai_mean']),
+                    'ai_sd': float(row['ai_sd']),
+                    'cohens_d': float(row['cohens_d'])
+                }
+            except ValueError:
+                continue
+    _feature_norms = norms
+    return _feature_norms
+
 def load_models():
     """Load all pre-trained models from the models/ directory."""
     manifest_path = os.path.join(MODELS_DIR, 'manifest.json')
@@ -100,10 +134,13 @@ def load_models():
     else:
         print(f"  WARNING: all-register detector not found at {all_path}")
 
-    # Check if SOTA hybrid ensemblers are available
+    # Check if SOTA hybrid ensemblers are available (either register ensembler + ONNX, or single ensembler + PyTorch semantic model)
     hybrid_path = os.path.join(MODELS_DIR, 'beemo_register_ensemblers.joblib')
     onnx_path = os.path.join(MODELS_DIR, 'deberta_onnx_quantized.onnx')
-    if os.path.exists(hybrid_path) and os.path.exists(onnx_path):
+    single_path = os.path.join(MODELS_DIR, 'beemo_hybrid_ensembler.joblib')
+    pytorch_path = os.path.join(MODELS_DIR, 'beemo_semantic_model')
+    
+    if (os.path.exists(hybrid_path) and os.path.exists(onnx_path)) or (os.path.exists(single_path) and os.path.exists(pytorch_path)):
         models['hybrid_available'] = True
         print("  SOTA Hybrid Register-Aware detector is AVAILABLE and active.")
     else:
@@ -145,6 +182,8 @@ class DetectResponse(BaseModel):
     model_attribution: Optional[dict] = Field(None, description="Predicted model source and confidence")
     is_calibrated: bool = Field(True, description="True if output probability is calibrated")
     sensitivity_applied: str = Field("normal", description="The sensitivity level used for the decision threshold")
+    explainability: Optional[dict] = Field(None, description="Detailed stylometric feature explainability relative to human register norms")
+    cascade_level: Optional[str] = Field(None, description="The level of the cascading model hierarchy used for prediction")
 
 
 class BatchDetectRequest(BaseModel):
@@ -287,21 +326,33 @@ def detect(req: DetectRequest, request: Request):
     else:
         detector = None
 
+    # Step 4: Cascading Classifier Architecture
+    if detector is None:
+        raise HTTPException(status_code=500, detail="No detector available.")
+        
+    # Level 1: Fast Stylometrics
+    fast_proba = detector.predict_proba(X)[0]
+    classes = detector.classes_
+    ai_label_idx = list(classes).index(1) if 1 in classes else 1
+    fast_probability = float(fast_proba[ai_label_idx])
+    
     ai_probability = None
-    if m.get('hybrid_available'):
+    cascade_level = None
+    
+    # Fast-path check (high confidence threshold: <= 0.15 or >= 0.85)
+    if fast_probability <= 0.15 or fast_probability >= 0.85 or not m.get('hybrid_available'):
+        ai_probability = fast_probability
+        cascade_level = "level_1_stylometrics"
+    else:
+        # Cascade to Level 2: Quantized ONNX & Hybrid Ensemble (heavy features)
         try:
             from tool.hybrid_detector import predict_hybrid
             ai_probability = predict_hybrid(text, register=register)
+            cascade_level = "level_2_hybrid_ensemble"
         except Exception as e:
-            print(f"Error executing hybrid prediction: {e}. Falling back to standard classifier.")
-
-    if ai_probability is None:
-        if detector is None:
-            raise HTTPException(status_code=500, detail="No detector available.")
-        ai_proba = detector.predict_proba(X)[0]
-        classes = detector.classes_
-        ai_label_idx = list(classes).index(1) if 1 in classes else 1
-        ai_probability = float(ai_proba[ai_label_idx])
+            print(f"Error executing hybrid prediction: {e}. Falling back to Level 1 stylometrics.")
+            ai_probability = fast_probability
+            cascade_level = "level_1_stylometrics"
 
     # Calibration: adjust based on word count to prevent short-text false positives
     word_count = len(text.split())
@@ -324,9 +375,38 @@ def detect(req: DetectRequest, request: Request):
     elapsed_ms = (time.time() - t0) * 1000
 
     features_dict = None
-    if req.return_features:
-        feats = extract_feature_vector(text, feature_cols=m['feature_cols'], extended=False)
-        features_dict = dict(zip(m['feature_cols'], feats)) if feats else None
+    feats = extract_feature_vector(text, feature_cols=m['feature_cols'], extended=False)
+    if feats:
+        features_dict = dict(zip(m['feature_cols'], feats))
+
+    # Compute Z-score explainability relative to human register norms
+    explainability_data = {}
+    norms = load_feature_norms()
+    reg_norms = norms.get(register, norms.get('all', {}))
+    
+    if features_dict and reg_norms:
+        for feat_name, val in features_dict.items():
+            if feat_name in reg_norms:
+                mean = reg_norms[feat_name]['human_mean']
+                sd = reg_norms[feat_name]['human_sd']
+                z_score = (val - mean) / sd if sd > 0 else 0.0
+                cohens_d = reg_norms[feat_name]['cohens_d']
+                
+                # Check deviation direction
+                deviation_towards_ai = False
+                if cohens_d > 0 and z_score > 0.5:
+                    deviation_towards_ai = True
+                elif cohens_d < 0 and z_score < -0.5:
+                    deviation_towards_ai = True
+                    
+                explainability_data[feat_name] = {
+                    "value": round(val, 4),
+                    "human_mean": round(mean, 4),
+                    "human_sd": round(sd, 4),
+                    "z_score": round(z_score, 2),
+                    "deviation_towards_ai": deviation_towards_ai,
+                    "cohens_d": round(cohens_d, 2)
+                }
 
     # Map sensitivity to threshold
     sens = getattr(req, 'sensitivity', 'normal').lower()
@@ -339,7 +419,9 @@ def detect(req: DetectRequest, request: Request):
         "register": register,
         "register_confidence": register_confidence,
         "is_ai": ai_probability >= threshold,
-        "features": features_dict,
+        "features": features_dict if req.return_features else None,
+        "explainability": explainability_data if explainability_data else None,
+        "cascade_level": cascade_level,
         "processing_time_ms": round(elapsed_ms, 2),
         "sentences": sentences_data,
         "neural_signals": neural_signals,
@@ -350,6 +432,7 @@ def detect(req: DetectRequest, request: Request):
     
     set_cache(cache_key, res)
     return res
+
 
 
 @app.post("/detect/batch", response_model=BatchDetectResponse)
@@ -406,43 +489,86 @@ def detect_batch(req: BatchDetectRequest, request: Request):
         else:
             register, _ = classify_register(feat_vector, m)
 
+        # Cascading Classifier Architecture
+        detector = m['detectors'].get(register, m.get('all_detector'))
+        if detector is None:
+            results.append(DetectResponse(
+                ai_probability=0.0,
+                register=register,
+                register_confidence=None,
+                is_ai=False,
+                features=None,
+                processing_time_ms=0.0,
+                sensitivity_applied=sens
+            ))
+            continue
+
+        # Level 1: Fast Stylometrics
+        fast_proba = detector.predict_proba(X)[0]
+        classes = detector.classes_
+        ai_label_idx = list(classes).index(1) if 1 in classes else 1
+        fast_probability = float(fast_proba[ai_label_idx])
+
         ai_probability = None
-        if m.get('hybrid_available'):
+        cascade_level = None
+
+        if fast_probability <= 0.15 or fast_probability >= 0.85 or not m.get('hybrid_available'):
+            ai_probability = fast_probability
+            cascade_level = "level_1_stylometrics"
+        else:
             try:
                 from tool.hybrid_detector import predict_hybrid
                 ai_probability = predict_hybrid(text_norm, register=register)
+                cascade_level = "level_2_hybrid_ensemble"
             except Exception:
-                pass
-
-        if ai_probability is None:
-            detector = m['detectors'].get(register, m.get('all_detector'))
-            if detector is None:
-                results.append(DetectResponse(
-                    ai_probability=0.0,
-                    register=register,
-                    register_confidence=None,
-                    is_ai=False,
-                    features=None,
-                    processing_time_ms=0.0,
-                    sensitivity_applied=sens
-                ))
-                continue
-
-            ai_proba = detector.predict_proba(X)[0]
-            classes = detector.classes_
-            ai_label_idx = list(classes).index(1) if 1 in classes else 1
-            ai_probability = float(ai_proba[ai_label_idx])
+                ai_probability = fast_probability
+                cascade_level = "level_1_stylometrics"
 
         # Calibration: adjust based on word count
         word_count = len(text_norm.split())
         ai_probability = calibrate_probability(ai_probability, word_count)
+
+        # Explainability Data
+        explainability_data = {}
+        features_dict = None
+        feats = extract_feature_vector(text_norm, feature_cols=m['feature_cols'], extended=False)
+        if feats:
+            features_dict = dict(zip(m['feature_cols'], feats))
+
+        norms = load_feature_norms()
+        reg_norms = norms.get(register, norms.get('all', {}))
+        
+        if features_dict and reg_norms:
+            for feat_name, val in features_dict.items():
+                if feat_name in reg_norms:
+                    mean = reg_norms[feat_name]['human_mean']
+                    sd = reg_norms[feat_name]['human_sd']
+                    z_score = (val - mean) / sd if sd > 0 else 0.0
+                    cohens_d = reg_norms[feat_name]['cohens_d']
+                    
+                    deviation_towards_ai = False
+                    if cohens_d > 0 and z_score > 0.5:
+                        deviation_towards_ai = True
+                    elif cohens_d < 0 and z_score < -0.5:
+                        deviation_towards_ai = True
+                        
+                    explainability_data[feat_name] = {
+                        "value": round(val, 4),
+                        "human_mean": round(mean, 4),
+                        "human_sd": round(sd, 4),
+                        "z_score": round(z_score, 2),
+                        "deviation_towards_ai": deviation_towards_ai,
+                        "cohens_d": round(cohens_d, 2)
+                    }
 
         results.append(DetectResponse(
             ai_probability=ai_probability,
             register=register,
             register_confidence=None,
             is_ai=ai_probability >= threshold,
-            features=None,
+            features=features_dict if req.return_features else None,
+            explainability=explainability_data if explainability_data else None,
+            cascade_level=cascade_level,
             processing_time_ms=0.0,
             sensitivity_applied=sens
         ))
