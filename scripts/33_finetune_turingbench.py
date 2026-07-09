@@ -56,6 +56,10 @@ def parse_args():
                         help="Use mixed precision (fp16) training")
     parser.add_argument("--no_fp16", action="store_true",
                         help="Disable mixed precision training")
+    parser.add_argument("--gradient_checkpointing", action="store_true", default=True,
+                        help="Enable gradient checkpointing (default: True)")
+    parser.add_argument("--no_gradient_checkpointing", action="store_true",
+                        help="Disable gradient checkpointing")
     return parser.parse_args()
 
 
@@ -127,7 +131,17 @@ def main():
         id2label={0: "human", 1: "ai"},
         label2id={"human": 0, "ai": 1},
     )
-    model.gradient_checkpointing_enable()
+
+    use_fp16 = args.fp16 and not args.no_fp16 and torch.cuda.is_available()
+    use_grad_ckpt = args.gradient_checkpointing and not args.no_gradient_checkpointing
+    # DeBERTa-v2/v3 with FP16 + gradient checkpointing triggers:
+    #   ValueError: Attempting to unscale FP16 gradients.
+    if use_grad_ckpt and "deberta-v" in args.model_name.lower() and use_fp16:
+        print(
+            "Warning: disabling gradient checkpointing for DeBERTa-v3 with FP16 "
+            "to avoid gradient scaler conflict."
+        )
+        use_grad_ckpt = False
 
     train_ds = make_dataset(train_df, tokenizer, args.max_length)
     val_ds = make_dataset(val_df, tokenizer, args.max_length)
@@ -144,6 +158,9 @@ def main():
                           "mps" if torch.backends.mps.is_available() else "cpu")
     class_weights = class_weights.to(device)
     model = model.to(device)
+
+    if use_grad_ckpt:
+        model.gradient_checkpointing_enable()
 
     class WeightedTrainer(Trainer):
         def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
@@ -174,7 +191,7 @@ def main():
         seed=args.seed,
         dataloader_num_workers=2,
         remove_unused_columns=False,
-        fp16=(args.fp16 and not args.no_fp16 and torch.cuda.is_available()),
+        fp16=use_fp16,
     )
 
     data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)

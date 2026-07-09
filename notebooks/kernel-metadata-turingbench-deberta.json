@@ -1,0 +1,13 @@
+{
+  "id": "vedangvatsa123/turingbench-deberta-v3-large-fine-tune",
+  "title": "TuringBench DeBERTa-v3-large Fine-tune",
+  "code_file": "kaggle_turingbench_deberta_v3_large.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
