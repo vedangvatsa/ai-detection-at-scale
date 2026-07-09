@@ -199,7 +199,6 @@ def main():
         push_to_hub=args.hub_model_id is not None,
         hub_model_id=args.hub_model_id,
         hub_strategy="checkpoint",
-        save_safetensors=True,
     )
 
     data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
