@@ -64,6 +64,10 @@ def parse_args():
                         help="HuggingFace Hub model ID to push checkpoints to")
     parser.add_argument("--resume_from_checkpoint", type=str, default=None,
                         help="Path or Hub model ID to resume training from")
+    parser.add_argument("--class_weights", action="store_true", default=True,
+                        help="Apply class weights to the loss (default: True)")
+    parser.add_argument("--no_class_weights", action="store_true",
+                        help="Disable class weights")
     return parser.parse_args()
 
 
@@ -189,12 +193,17 @@ def main():
             "Training will continue but checkpoints will NOT be pushed to Hub."
         )
 
+    use_class_weights = args.class_weights and not args.no_class_weights
+    if not use_class_weights:
+        print("Class weights disabled for loss computation.")
+
     class WeightedTrainer(Trainer):
         def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
             labels = inputs.pop("labels")
             outputs = model(**inputs)
             logits = outputs.logits
-            loss_fct = torch.nn.CrossEntropyLoss(weight=class_weights)
+            loss_weight = class_weights if use_class_weights else None
+            loss_fct = torch.nn.CrossEntropyLoss(weight=loss_weight)
             loss = loss_fct(logits.float(), labels)
             return (loss, outputs) if return_outputs else loss
 
@@ -218,6 +227,7 @@ def main():
         seed=args.seed,
         dataloader_num_workers=2,
         remove_unused_columns=False,
+        max_grad_norm=1.0,
         fp16=use_fp16,
         push_to_hub=can_push,
         hub_model_id=args.hub_model_id if can_push else None,
