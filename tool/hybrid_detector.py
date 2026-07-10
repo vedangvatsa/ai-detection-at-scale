@@ -41,7 +41,12 @@ def _load_models():
             try:
                 import onnxruntime as ort
                 _ort_session = ort.InferenceSession(ONNX_PATH, providers=['CPUExecutionProvider'])
-                _tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v3-small")
+                
+                pytorch_path = os.path.join(MODELS_DIR, 'beemo_semantic_model')
+                if os.path.exists(pytorch_path):
+                    _tokenizer = AutoTokenizer.from_pretrained(pytorch_path)
+                else:
+                    _tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v3-small")
                 return
             except Exception as e:
                 print(f"ONNX session load failed: {e}. Falling back to PyTorch model.")
@@ -94,7 +99,7 @@ def predict_hybrid(text: str, register: str = "all") -> float:
     deberta_prob = 0.5
     try:
         if _ort_session is not None:
-            inputs = _tokenizer(text, return_tensors="np", truncation=True, max_length=256, padding=True)
+            inputs = _tokenizer(text, return_tensors="np", truncation=True, max_length=256, padding="max_length")
             ort_inputs = {
                 "input_ids": inputs["input_ids"].astype(np.int64),
                 "attention_mask": inputs["attention_mask"].astype(np.int64)
