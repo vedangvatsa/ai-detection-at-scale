@@ -193,3 +193,24 @@ def get_word_lists(lang='en'):
 def available_languages():
     """Return list of supported language codes."""
     return list(WORD_LISTS.keys())
+
+
+def extract_language_agnostic_features(text):
+    """Extract a subset of stylometric features that are dictionary-free and language-agnostic.
+    
+    This allows classification on unsupported languages (e.g. Russian, Hindi, Japanese)
+    without relying on translated word lists.
+    """
+    from tool.feature_extractor import extract_features
+    # Force lang='unknown' to prevent English dictionary list bias
+    feats = extract_features(text, extended=True, lang='unknown', use_pos_tags=False)
+    if feats is None:
+        return None
+        
+    agnostic_keys = [
+        'char_entropy', 'punct_entropy', 'rep_rate', 'mean_sent_len', 'sent_cv',
+        'sent_length_std', 'type_token_ratio', 'hapax_legomena_ratio', 'yules_k', 'simpsons_d',
+        'exclamation_density', 'question_density', 'number_density', 'quote_density'
+    ]
+    return {k: feats.get(k, 0.0) for k in agnostic_keys}
+

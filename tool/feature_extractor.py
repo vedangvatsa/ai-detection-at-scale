@@ -130,7 +130,15 @@ def tokenize_sentences(text):
 
 
 def tokenize_words(text):
-    return re.findall(r'\b[a-zA-Z]+\b', text.lower())
+    text_lower = text.lower()
+    # Check for Chinese/Japanese CJK ideographs
+    cjk_count = sum(1 for c in text_lower if '\u4e00' <= c <= '\u9fff' or '\u3040' <= c <= '\u30ff')
+    if cjk_count > len(text_lower) * 0.1:
+        return [c for c in text_lower if '\u4e00' <= c <= '\u9fff' or '\u3040' <= c <= '\u30ff' or c.isalpha()]
+    
+    # General Unicode-aware word tokenization
+    words = re.findall(r'\b\w+\b', text_lower)
+    return [w for w in words if any(c.isalpha() for c in w)]
 
 
 def count_syllables(word):
@@ -291,9 +299,9 @@ def _pos_tag_words(words: list, use_pos_tags: bool = False) -> list:
         import nltk
         # Ensure the averaged_perceptron_tagger is available (download is lazy/no-op if present).
         try:
-            nltk.data.find('taggers/averaged_perceptron_tagger')
+            nltk.data.find('taggers/averaged_perceptron_tagger_eng')
         except LookupError:
-            nltk.download('averaged_perceptron_tagger', quiet=True)
+            nltk.download('averaged_perceptron_tagger_eng', quiet=True)
         return nltk.pos_tag(words)
     except Exception:
         return []
@@ -441,6 +449,34 @@ def _extract_extended_features(text, words, sents, orig, use_pos_tags: bool = Fa
         feats['yules_k'] = 0.0
         feats['simpsons_d'] = 0.0
 
+    # ── Advanced Humanizer Defenses (4 features) ──
+    adv_pos_tags = _pos_tag_words(words, use_pos_tags=True)
+    if adv_pos_tags:
+        nouns = sum(1 for _, tag in adv_pos_tags if tag.startswith('NN'))
+        verbs = sum(1 for _, tag in adv_pos_tags if tag.startswith('VB'))
+        adjectives = sum(1 for _, tag in adv_pos_tags if tag.startswith('JJ'))
+        adverbs = sum(1 for _, tag in adv_pos_tags if tag.startswith('RB'))
+        
+        feats['noun_verb_ratio'] = nouns / max(verbs, 1)
+        feats['adj_adv_ratio'] = adjectives / max(adverbs, 1)
+        
+        if len(adv_pos_tags) >= 2:
+            transitions = [f"{adv_pos_tags[i][1]}->{adv_pos_tags[i+1][1]}" for i in range(len(adv_pos_tags)-1)]
+            trans_counts = Counter(transitions)
+            total_t = len(transitions)
+            feats['pos_transition_entropy'] = -sum((c/total_t) * math.log2(c/total_t) for c in trans_counts.values())
+        else:
+            feats['pos_transition_entropy'] = 0.0
+    else:
+        feats['noun_verb_ratio'] = 1.5
+        feats['adj_adv_ratio'] = 1.0
+        feats['pos_transition_entropy'] = 0.0
+        
+    if len(sent_lengths) >= 2:
+        feats['sent_length_std'] = float(np.std(sent_lengths, ddof=1))
+    else:
+        feats['sent_length_std'] = 0.0
+
     return feats
 
 
@@ -461,6 +497,7 @@ EXTENDED_FEATURE_COLS = [
     'capitalized_entity_density', 'number_density', 'acronym_density',
     'url_email_density', 'quote_density',
     'type_token_ratio', 'hapax_legomena_ratio', 'yules_k', 'simpsons_d',
+    'noun_verb_ratio', 'adj_adv_ratio', 'pos_transition_entropy', 'sent_length_std',
 ]
 
 ALL_FEATURE_COLS = ORIGINAL_FEATURE_COLS + EXTENDED_FEATURE_COLS

@@ -5,7 +5,7 @@ from tool.feature_extractor import extract_features, ORIGINAL_FEATURE_COLS
 from tool.neural_detector import compute_perplexity_and_burstiness
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', 'models')
-ONNX_PATH = os.path.join(MODELS_DIR, 'deberta_onnx_quantized.onnx')
+ONNX_PATH = os.path.join(MODELS_DIR, 'roberta_large_onnx_quantized.onnx')
 ENSEMBLERS_PATH = os.path.join(MODELS_DIR, 'beemo_register_ensemblers.joblib')
 
 _tokenizer = None
@@ -42,19 +42,19 @@ def _load_models():
                 import onnxruntime as ort
                 _ort_session = ort.InferenceSession(ONNX_PATH, providers=['CPUExecutionProvider'])
                 
-                pytorch_path = os.path.join(MODELS_DIR, 'beemo_semantic_model')
+                pytorch_path = os.path.join(MODELS_DIR, 'roberta_large_semantic_model')
                 if os.path.exists(pytorch_path):
                     _tokenizer = AutoTokenizer.from_pretrained(pytorch_path)
                 else:
-                    _tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v3-small")
+                    _tokenizer = AutoTokenizer.from_pretrained("roberta-large")
                 return
             except Exception as e:
                 print(f"ONNX session load failed: {e}. Falling back to PyTorch model.")
                 
         # PyTorch fallback
-        pytorch_path = os.path.join(MODELS_DIR, 'beemo_semantic_model')
+        pytorch_path = os.path.join(MODELS_DIR, 'roberta_large_semantic_model')
         if not os.path.exists(pytorch_path):
-            raise FileNotFoundError(f"DeBERTa model not found at {ONNX_PATH} or {pytorch_path}.")
+            raise FileNotFoundError(f"RoBERTa model not found at {ONNX_PATH} or {pytorch_path}.")
             
         from transformers import AutoModelForSequenceClassification
         import torch
@@ -69,7 +69,7 @@ def predict_hybrid(text: str, register: str = "all") -> float:
     - 11 stylometric features
     - GPT-2 perplexity & burstiness
     - Binoculars score
-    - Fine-tuned DeBERTa Beemo-specific MGT probability (ONNX or PyTorch)
+    - Fine-tuned RoBERTa Large Beemo-specific MGT probability (ONNX or PyTorch)
     And routes to the register-specific ensembler.
     """
     _load_models()
@@ -95,8 +95,8 @@ def predict_hybrid(text: str, register: str = "all") -> float:
     except Exception:
         bino = 0.95  # Neutral fallback
         
-    # 4. Extract semantic probability from quantized DeBERTa ONNX model or PyTorch fallback
-    deberta_prob = 0.5
+    # 4. Extract semantic probability from quantized RoBERTa ONNX model or PyTorch fallback
+    roberta_prob = 0.5
     try:
         if _ort_session is not None:
             inputs = _tokenizer(text, return_tensors="np", truncation=True, max_length=256, padding="max_length")
@@ -108,11 +108,11 @@ def predict_hybrid(text: str, register: str = "all") -> float:
             # Softmax
             exp_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
             probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
-            deberta_prob = float(probs[0][1])
+            roberta_prob = float(probs[0][1])
         elif _pytorch_model is not None:
             import torch
             inputs = _tokenizer(text, return_tensors="pt", truncation=True, max_length=256, padding=True)
-            # Remove token_type_ids if present (some DeBERTa implementations do not support it)
+            # Remove token_type_ids if present
             inputs.pop('token_type_ids', None)
             
             with torch.no_grad():
@@ -120,10 +120,10 @@ def predict_hybrid(text: str, register: str = "all") -> float:
                 logits = outputs.logits.cpu().numpy()
             exp_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
             probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
-            deberta_prob = float(probs[0][1])
+            roberta_prob = float(probs[0][1])
     except Exception as e:
-        print(f"Error executing DeBERTa inference: {e}")
-        deberta_prob = 0.5
+        print(f"Error executing RoBERTa inference: {e}")
+        roberta_prob = 0.5
         
     # Select register ensembler
     ensembler = _ensemblers.get(register, _ensemblers.get('all'))
@@ -134,9 +134,9 @@ def predict_hybrid(text: str, register: str = "all") -> float:
     # Dynamically match features count (old ensembler has 14 features without binoculars, new has 15)
     num_features = getattr(ensembler, 'n_features_in_', 14)
     if num_features == 14:
-        ensemble_vector = np.array(stylo_vector + [ppl, burst, deberta_prob]).reshape(1, -1)
+        ensemble_vector = np.array(stylo_vector + [ppl, burst, roberta_prob]).reshape(1, -1)
     else:
-        ensemble_vector = np.array(stylo_vector + [ppl, burst, bino, deberta_prob]).reshape(1, -1)
+        ensemble_vector = np.array(stylo_vector + [ppl, burst, bino, roberta_prob]).reshape(1, -1)
         
     final_prob = ensembler.predict_proba(ensemble_vector)[0][1]
     

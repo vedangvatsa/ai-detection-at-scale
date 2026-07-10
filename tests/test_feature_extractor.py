@@ -23,9 +23,9 @@ def test_feature_count_matches_code():
     feats = extract_features(text, extended=True)
     assert feats is not None
     assert set(ALL_FEATURE_COLS) == set(feats.keys()), f"Missing: {set(ALL_FEATURE_COLS) - set(feats.keys())}"
-    assert len(ALL_FEATURE_COLS) == 35, f"Expected 35 features, got {len(ALL_FEATURE_COLS)}"
+    assert len(ALL_FEATURE_COLS) == 39, f"Expected 39 features, got {len(ALL_FEATURE_COLS)}"
     assert len(ORIGINAL_FEATURE_COLS) == 11
-    assert len(EXTENDED_FEATURE_COLS) == 24
+    assert len(EXTENDED_FEATURE_COLS) == 28
 
 
 def test_negative_words_no_duplicates():

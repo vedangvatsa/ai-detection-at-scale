@@ -136,9 +136,9 @@ def load_models():
 
     # Check if SOTA hybrid ensemblers are available (either register ensembler + ONNX, or single ensembler + PyTorch semantic model)
     hybrid_path = os.path.join(MODELS_DIR, 'beemo_register_ensemblers.joblib')
-    onnx_path = os.path.join(MODELS_DIR, 'deberta_onnx_quantized.onnx')
+    onnx_path = os.path.join(MODELS_DIR, 'roberta_large_onnx_quantized.onnx')
     single_path = os.path.join(MODELS_DIR, 'beemo_hybrid_ensembler.joblib')
-    pytorch_path = os.path.join(MODELS_DIR, 'beemo_semantic_model')
+    pytorch_path = os.path.join(MODELS_DIR, 'roberta_large_semantic_model')
     
     if (os.path.exists(hybrid_path) and os.path.exists(onnx_path)) or (os.path.exists(single_path) and os.path.exists(pytorch_path)):
         models['hybrid_available'] = True
