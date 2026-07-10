@@ -40,6 +40,11 @@ def calibrate_probability(probability: float, word_count: int, target_length: in
     regression fit on held-out predictions. Otherwise, falls back to the original
     length-conditioned heuristic that pulls short-document probabilities toward 0.5.
     """
+    # Enforce quadratic damping safeguard for extremely short texts
+    if word_count < 15:
+        factor = (word_count / 15.0) ** 2
+        probability = 0.5 + factor * (probability - 0.5)
+
     model = _load_calibration_model()
     if model is None:
         return _heuristic_calibrate(probability, word_count, target_length, steepness)

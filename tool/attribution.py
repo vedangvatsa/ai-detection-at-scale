@@ -22,7 +22,7 @@ def get_attribution_model():
             print(f"WARNING: Attribution model not found at {MODEL_PATH}")
     return _model
 
-def attribute_source(feature_vector, is_ai_probability):
+def attribute_source(feature_vector, is_ai_probability, text=None):
     """
     Predicts the model source of a text given its feature vector.
     Fails back to 'human' if the overall AI probability is low (< 0.25).
@@ -33,6 +33,27 @@ def attribute_source(feature_vector, is_ai_probability):
             "source_model": "human",
             "confidence": round(1.0 - is_ai_probability, 4)
         }
+
+    # Check reasoning model classifier if text is provided
+    reasoning_model_path = os.path.join(SCRIPT_DIR, '..', 'models', 'detector_reasoning.joblib')
+    if text and os.path.exists(reasoning_model_path):
+        try:
+            from tool.feature_extractor import extract_features
+            adv_feats = extract_features(text, extended=True, use_pos_tags=True)
+            if adv_feats:
+                r_clf_data = joblib.load(reasoning_model_path)
+                r_clf = r_clf_data['model']
+                r_cols = r_clf_data['feature_cols']
+                X_r = np.array([[adv_feats[c] for c in r_cols]])
+                r_prob = r_clf.predict_proba(X_r)[0][1]
+                if r_prob > 0.6:
+                    return {
+                        "source_model": "Reasoning LLM (DeepSeek-R1 / OpenAI o1)",
+                        "confidence": round(r_prob, 4),
+                        "is_reasoning_model": True
+                    }
+        except Exception as e:
+            print(f"Error checking reasoning model attribution: {e}")
         
     model = get_attribution_model()
     if model is None:

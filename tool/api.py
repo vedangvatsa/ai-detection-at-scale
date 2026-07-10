@@ -374,7 +374,7 @@ def detect(req: DetectRequest, request: Request):
         neural_signals = {"perplexity": None, "burstiness": None, "error": str(e)}
 
     # Step 7: Model Attribution
-    attribution = attribute_source(feat_vector, ai_probability)
+    attribution = attribute_source(feat_vector, ai_probability, text=text)
 
     # Step 8: Build response
     elapsed_ms = (time.time() - t0) * 1000
