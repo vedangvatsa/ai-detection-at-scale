@@ -47,6 +47,9 @@ from tool.attribution import attribute_source
 from tool.adversarial_defense import normalize_text_defensive
 from tool.calibration import calibrate_probability
 from tool.register_classifier import classify_register
+from tool.span_detector import detect_spans
+from tool.watermark_detector import detect_watermark
+from tool.conformal_prediction import get_confidence_interval
 
 SENSITIVITY_THRESHOLDS = {'high': 0.35, 'normal': 0.50, 'low': 0.70}
 
@@ -184,6 +187,8 @@ class DetectResponse(BaseModel):
     sensitivity_applied: str = Field("normal", description="The sensitivity level used for the decision threshold")
     explainability: Optional[dict] = Field(None, description="Detailed stylometric feature explainability relative to human register norms")
     cascade_level: Optional[str] = Field(None, description="The level of the cascading model hierarchy used for prediction")
+    confidence_interval: Optional[dict] = Field(None, description="Conformal prediction confidence interval for ai_probability")
+    watermark: Optional[dict] = Field(None, description="Watermark detection result (blind entropy mode)")
 
 
 class BatchDetectRequest(BaseModel):
@@ -430,8 +435,93 @@ def detect(req: DetectRequest, request: Request):
         "sensitivity_applied": sens
     }
     
+    # Step 9: Confidence interval via conformal prediction
+    ci = get_confidence_interval(ai_probability, alpha=0.1)
+    res["confidence_interval"] = ci
+
+    # Step 10: Blind watermark detection
+    try:
+        wm = detect_watermark(text)
+        res["watermark"] = wm
+    except Exception as e:
+        res["watermark"] = None
+
     set_cache(cache_key, res)
     return res
+
+
+# ── Span detection endpoint ────────────────────────────────────────────────
+
+class SpanDetectRequest(BaseModel):
+    text: str = Field(..., description="Text to analyze for AI-generated spans")
+    register: Optional[str] = Field(None, description="Override register")
+    watermark_seed: Optional[int] = Field(None, description="Optional KGW watermark seed for keyed detection")
+
+
+@app.post("/detect/spans")
+def detect_spans_endpoint(req: SpanDetectRequest, request: Request):
+    """Span-level detection: which sentences in this document are AI-generated?"""
+    if not _check_api_key(request):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key.")
+    ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(ip):
+        raise HTTPException(status_code=429, detail="Too many requests.")
+
+    m = get_models()
+    t0 = time.time()
+
+    text = normalize_text_defensive(req.text)
+    word_count = len(text.split())
+    if word_count < 30:
+        raise HTTPException(status_code=400, detail="Text too short for span detection (minimum 30 words).")
+
+    # Pick detector
+    feat_vector = extract_feature_vector(text, feature_cols=m['feature_cols'], extended=False)
+    if feat_vector is None:
+        raise HTTPException(status_code=400, detail="Feature extraction failed.")
+
+    register = req.register or classify_register(feat_vector, m)[0]
+    detector = m['detectors'].get(register, m.get('all_detector'))
+    if detector is None:
+        raise HTTPException(status_code=500, detail="No detector available.")
+
+    span_result = detect_spans(text, detector, feature_cols=m['feature_cols'])
+
+    # Watermark detection (keyed if seed provided)
+    try:
+        wm = detect_watermark(text, seed=req.watermark_seed)
+        span_result["watermark"] = wm
+    except Exception:
+        span_result["watermark"] = None
+
+    span_result["register"] = register
+    span_result["processing_time_ms"] = round((time.time() - t0) * 1000, 2)
+    return span_result
+
+
+# ── Watermark detection endpoint ───────────────────────────────────────────
+
+class WatermarkRequest(BaseModel):
+    text: str = Field(..., description="Text to test for watermarks")
+    seed: Optional[int] = Field(None, description="LLM watermark seed (KGW keyed mode). Leave None for blind detection.")
+    gamma: float = Field(0.5, description="Green-list fraction (KGW parameter, default 0.5)")
+    z_threshold: float = Field(4.0, description="Z-score threshold for positive detection")
+
+
+@app.post("/detect/watermark")
+def detect_watermark_endpoint(req: WatermarkRequest, request: Request):
+    """Detect cryptographic watermarks in LLM-generated text."""
+    if not _check_api_key(request):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key.")
+    ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(ip):
+        raise HTTPException(status_code=429, detail="Too many requests.")
+
+    text = normalize_text_defensive(req.text)
+    result = detect_watermark(text, seed=req.seed, gamma=req.gamma, z_threshold=req.z_threshold)
+    result["word_count"] = len(text.split())
+    return result
+
 
 
 
