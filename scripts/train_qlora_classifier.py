@@ -36,8 +36,8 @@ from transformers import (
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str,
-                        default="Qwen/Qwen3.6-27B",
-                        help="Base model name or HF path (e.g. Qwen/Qwen3.6-27B)")
+                        default="Qwen/Qwen3-4B",
+                        help="Base model name or HF path (e.g. Qwen/Qwen3-4B)")
     parser.add_argument("--output_dir", type=str, default="./models/turingbench_qlora",
                         help="Directory to save checkpoints and final model")
     parser.add_argument("--hub_model_id", type=str, default=None,

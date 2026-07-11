@@ -3,15 +3,15 @@
 # Works on RunPod, Vast.ai, Lambda Labs, or any CUDA Ubuntu instance.
 #
 # Usage:
-#   HF_TOKEN=hf_... bash scripts/run_cloud_qlora.sh Qwen/Qwen3.6-27B
+#   HF_TOKEN=hf_... bash scripts/run_cloud_qlora.sh Qwen/Qwen3-4B
 #
 # Notes:
-#   - Default: Qwen/Qwen3.6-27B (released 2026-04). Fast and accurate on a single A100 80GB.
+#   - Default: Qwen/Qwen3-4B (released 2026-04). Fast and accurate on a single A100 80GB or a free Colab T4.
 #   - For 70B+ models (Llama-3.3, Qwen3.5/3.6 MoE, etc.) use 2x A100 80GB or H100 and multi-GPU settings.
 
 set -euo pipefail
 
-MODEL_NAME="${1:-Qwen/Qwen3.6-27B}"
+MODEL_NAME="${1:-Qwen/Qwen3-4B}"
 REPO_DIR="/workspace/ai-detection-at-scale"
 OUT_DIR="/workspace/models/turingbench_$(echo "$MODEL_NAME" | tr '/-' '_' | tr '[:upper:]' '[:lower:]')"
 HUB_USERNAME="${HF_USERNAME:-vedangvatsa123}"
