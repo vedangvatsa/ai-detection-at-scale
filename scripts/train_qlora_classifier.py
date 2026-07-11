@@ -36,8 +36,8 @@ from transformers import (
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str,
-                        default="unsloth/Llama-3.3-70B-Instruct-bnb-4bit",
-                        help="Base model name or HF path (e.g. unsloth/Llama-3.3-70B-Instruct-bnb-4bit)")
+                        default="mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+                        help="Base model name or HF path (e.g. mistralai/Mistral-Small-3.2-24B-Instruct-2506)")
     parser.add_argument("--output_dir", type=str, default="./models/turingbench_qlora",
                         help="Directory to save checkpoints and final model")
     parser.add_argument("--hub_model_id", type=str, default=None,
