@@ -72,15 +72,6 @@ def escape_latex_text(text):
     text = text.replace('^', r'\textasciicircum{}')
     text = text.replace('→', r'$\rightarrow$')
     text = text.replace('×', r'$\times$')
-    def make_breakable(match):
-        t = match.group(1)
-        t = t.replace(',', ',\\allowbreak{}')
-        t = t.replace('.', '.\\allowbreak{}')
-        t = t.replace('\\_', '\\_\\allowbreak{}')
-        t = t.replace(':', ':\\allowbreak{}')
-        t = t.replace('|', '|\\allowbreak{}')
-        return r'\texttt{' + t + '}'
-    text = re.sub(r'`([^`]+)`', make_breakable, text)
     return text
 
 
@@ -120,11 +111,46 @@ def convert_quotes(text):
 
 
 def process_paragraph(text):
-    text = escape_latex_text(text)
-    text = convert_inline_formatting(text)
-    text = convert_citations(text)
-    text = convert_quotes(text)
-    return text
+    # 1. Mask backticks
+    backticks = []
+    def mask_backtick(match):
+        backticks.append(match.group(1))
+        return f"__BACKTICK_PLACEHOLDER_{len(backticks)-1}__"
+    
+    masked_text = re.sub(r'`([^`]+)`', mask_backtick, text)
+    
+    # 2. Process the masked text (normal text formatting)
+    masked_text = escape_latex_text(masked_text)
+    masked_text = convert_inline_formatting(masked_text)
+    masked_text = convert_citations(masked_text)
+    masked_text = convert_quotes(masked_text)
+    
+    # 3. Restore backticks with LaTeX formatting
+    def restore_backtick(match):
+        idx = int(match.group(1))
+        raw_code = backticks[idx]
+        
+        # Escape characters inside code block
+        code_esc = raw_code
+        code_esc = code_esc.replace('\\', '\\textbackslash{}')
+        code_esc = code_esc.replace('_', '\\_')
+        code_esc = code_esc.replace('%', '\\%')
+        code_esc = code_esc.replace('&', '\\&')
+        code_esc = code_esc.replace('#', '\\#')
+        code_esc = code_esc.replace('{', '\\{')
+        code_esc = code_esc.replace('}', '\\}')
+        
+        # Make breakable
+        code_esc = code_esc.replace(',', ',\\allowbreak{}')
+        code_esc = code_esc.replace('.', '.\\allowbreak{}')
+        code_esc = code_esc.replace('\\_', '\\_\\allowbreak{}')
+        code_esc = code_esc.replace(':', ':\\allowbreak{}')
+        code_esc = code_esc.replace('|', '|\\allowbreak{}')
+        
+        return r'\texttt{' + code_esc + '}'
+        
+    final_text = re.sub(r'__BACKTICK_PLACEHOLDER_(\d+)__', restore_backtick, masked_text)
+    return final_text
 
 
 def render_table(rows, caption=None):
