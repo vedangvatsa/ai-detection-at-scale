@@ -1,0 +1,13 @@
+{
+  "id": "vedangvatsa123/turingbench-phi4-mini-fine-tune",
+  "title": "TuringBench Phi4 Mini Fine-tune",
+  "code_file": "kaggle_turingbench_phi4_mini.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
