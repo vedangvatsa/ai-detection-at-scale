@@ -111,8 +111,12 @@ def main():
             print(f"Pushed temporary setup to {tmp_dir_path}. Launching Kaggle push...")
             
             # 4. Execute kaggle kernels push
+            push_args = [kaggle_cmd, "kernels", "push"]
+            if "accelerator" in meta:
+                push_args.extend(["--accelerator", meta["accelerator"]])
+            
             res = subprocess.run(
-                [kaggle_cmd, "kernels", "push"],
+                push_args,
                 cwd=str(tmp_dir_path),
                 capture_output=True,
                 text=True
