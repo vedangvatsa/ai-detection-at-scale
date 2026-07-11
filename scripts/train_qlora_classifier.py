@@ -35,8 +35,9 @@ from transformers import (
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", type=str, required=True,
-                        help="Base model name or HF path (e.g. unsloth/Qwen2.5-72B-Instruct-bnb-4bit)")
+    parser.add_argument("--model_name", type=str,
+                        default="unsloth/Llama-3.3-70B-Instruct-bnb-4bit",
+                        help="Base model name or HF path (e.g. unsloth/Llama-3.3-70B-Instruct-bnb-4bit)")
     parser.add_argument("--output_dir", type=str, default="./models/turingbench_qlora",
                         help="Directory to save checkpoints and final model")
     parser.add_argument("--hub_model_id", type=str, default=None,
@@ -136,6 +137,8 @@ def main():
         device_map="auto",
         trust_remote_code=True,
         torch_dtype=torch.bfloat16,
+        low_cpu_mem_usage=True,
+        attn_implementation="sdpa",
     )
     model.config.pad_token_id = tokenizer.pad_token_id
 

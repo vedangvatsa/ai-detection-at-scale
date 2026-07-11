@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
-# Cloud training runner for 70B+ models with QLoRA on a single A100 80GB or multi-A100.
+# Cloud training runner for 70B+ models with QLoRA on a single A100 80GB.
 # Works on RunPod, Vast.ai, Lambda Labs, or any CUDA Ubuntu instance.
 #
 # Usage:
-#   HF_TOKEN=hf_... bash scripts/run_cloud_qlora.sh unsloth/Qwen2.5-72B-Instruct-bnb-4bit
-#   HF_TOKEN=hf_... bash scripts/run_cloud_qlora.sh unsloth/Meta-Llama-3.1-70B-bnb-4bit
+#   HF_TOKEN=hf_... bash scripts/run_cloud_qlora.sh unsloth/Llama-3.3-70B-Instruct-bnb-4bit
+#
+# Notes:
+#   - Llama-3.3-70B-Instruct (2024-12) is the latest dense 70B that fits on one A100 80GB.
+#   - Qwen2.5/LLaMA-3.1 are older. Qwen3.5/3.6 are newer but MoE and may not fit or work
+#     with sequence classification on a single A100. Use 2x A100 80GB or H100 for those.
 
 set -euo pipefail
 
-MODEL_NAME="${1:-unsloth/Qwen2.5-72B-Instruct-bnb-4bit}"
+MODEL_NAME="${1:-unsloth/Llama-3.3-70B-Instruct-bnb-4bit}"
 REPO_DIR="/workspace/ai-detection-at-scale"
 OUT_DIR="/workspace/models/turingbench_$(echo "$MODEL_NAME" | tr '/-' '_' | tr '[:upper:]' '[:lower:]')"
 HUB_USERNAME="${HF_USERNAME:-vedangvatsa123}"
