@@ -120,7 +120,7 @@ def main():
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_compute_dtype=torch.float16,
         bnb_4bit_use_double_quant=True,
     )
 
@@ -136,7 +136,7 @@ def main():
         quantization_config=bnb_config,
         device_map="auto",
         trust_remote_code=True,
-        torch_dtype=torch.bfloat16,
+        torch_dtype=torch.float16,
         low_cpu_mem_usage=True,
         attn_implementation="sdpa",
     )
@@ -200,7 +200,7 @@ def main():
         dataloader_num_workers=2,
         remove_unused_columns=False,
         max_grad_norm=1.0,
-        bf16=True,
+        fp16=True,
         push_to_hub=can_push,
         hub_model_id=args.hub_model_id if can_push else None,
         hub_strategy="checkpoint" if can_push else "every_save",
