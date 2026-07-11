@@ -193,6 +193,11 @@ def main():
 
     is_deberta = "deberta-v" in args.model_name.lower()
     use_fp16 = args.fp16 and not args.no_fp16 and torch.cuda.is_available()
+    use_bf16 = False
+    if any(n in args.model_name.lower() for n in ["qwen", "llama", "phi"]) and torch.cuda.is_available():
+        print("Autoregressive/LLM model detected: forcing BF16 mixed precision to avoid GradScaler BFloat16 errors.")
+        use_bf16 = True
+        use_fp16 = False
     use_grad_ckpt = args.gradient_checkpointing and not args.no_gradient_checkpointing
 
     # DeBERTa-v2/v3 with FP16 triggers a known gradient scaler error on many GPUs.
@@ -278,6 +283,7 @@ def main():
         remove_unused_columns=False,
         max_grad_norm=1.0,
         fp16=use_fp16,
+        bf16=use_bf16,
         push_to_hub=can_push,
         hub_model_id=args.hub_model_id if can_push else None,
         hub_strategy="checkpoint" if can_push else "every_save",
