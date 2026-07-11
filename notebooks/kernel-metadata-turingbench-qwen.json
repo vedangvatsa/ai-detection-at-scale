@@ -1,0 +1,13 @@
+{
+  "id": "vedangvatsa123/turingbench-qwen-0-5b-fine-tune",
+  "title": "TuringBench Qwen-0.5B Fine-tune",
+  "code_file": "kaggle_turingbench_qwen_0.5b.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}

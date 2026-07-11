@@ -3,15 +3,15 @@
 # Works on RunPod, Vast.ai, Lambda Labs, or any CUDA Ubuntu instance.
 #
 # Usage:
-#   HF_TOKEN=hf_... bash scripts/run_cloud_qlora.sh mistralai/Mistral-Small-3.2-24B-Instruct-2506
+#   HF_TOKEN=hf_... bash scripts/run_cloud_qlora.sh Qwen/Qwen3.6-27B
 #
 # Notes:
-#   - Default: Mistral-Small-3.2-24B-Instruct-2506 (released 2026-06). Fast and accurate on a single A100 80GB.
-#   - For 70B+ models (Llama-3.3, Qwen3.5/3.6, etc.) use 2x A100 80GB or H100 and multi-GPU settings.
+#   - Default: Qwen/Qwen3.6-27B (released 2026-04). Fast and accurate on a single A100 80GB.
+#   - For 70B+ models (Llama-3.3, Qwen3.5/3.6 MoE, etc.) use 2x A100 80GB or H100 and multi-GPU settings.
 
 set -euo pipefail
 
-MODEL_NAME="${1:-mistralai/Mistral-Small-3.2-24B-Instruct-2506}"
+MODEL_NAME="${1:-Qwen/Qwen3.6-27B}"
 REPO_DIR="/workspace/ai-detection-at-scale"
 OUT_DIR="/workspace/models/turingbench_$(echo "$MODEL_NAME" | tr '/-' '_' | tr '[:upper:]' '[:lower:]')"
 HUB_USERNAME="${HF_USERNAME:-vedangvatsa123}"

@@ -4,7 +4,11 @@ data/
 
 # Trained models (too large for git — train via scripts/09_ensemble_and_defense.py)
 models/*.joblib
+models/*.joblib.bak
+models/*.onnx
+models/*.onnx.data
 models/beemo_semantic_model/
+models/roberta_large_semantic_model/
 models/public/
 models/hf_cache/
 models/turingbench_roberta_large/
