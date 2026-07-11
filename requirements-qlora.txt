@@ -1,0 +1,26 @@
+# Modern QLoRA training pipeline for 70B+ models (Qwen, LLaMA)
+# Install on a Linux A100 80GB instance with CUDA 12.1+
+
+# Core training stack
+torch>=2.3.0
+transformers>=4.41.0
+accelerate>=0.30.0
+peft>=0.11.0
+trl>=0.8.6
+bitsandbytes>=0.43.0
+
+# Optional: Unsloth for 2-5x faster QLoRA (Linux only)
+# unsloth[cu121-ampere-torch230] @ git+https://github.com/unslothai/unsloth.git
+
+# Data and utilities
+datasets>=2.19.0
+scikit-learn>=1.4.0
+pandas>=2.2.0
+huggingface-hub>=0.23.0
+python-dotenv>=1.0.0
+joblib>=1.4.0
+
+# Metrics / logging
+wandb
+sentencepiece
+protobuf
