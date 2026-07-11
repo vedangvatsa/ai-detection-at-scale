@@ -141,6 +141,7 @@ def main():
         attn_implementation="sdpa",
     )
     model.config.pad_token_id = tokenizer.pad_token_id
+    model.config.use_cache = False
 
     model = prepare_model_for_kbit_training(model)
 
@@ -165,11 +166,13 @@ def main():
     model.print_trainable_parameters()
 
     def tokenize_function(examples):
-        return tokenizer(examples["text"], truncation=True, max_length=args.max_length, padding=False)
+        tokenized = tokenizer(examples["text"], truncation=True, max_length=args.max_length, padding=False)
+        tokenized["labels"] = examples["label"]
+        return tokenized
 
     from datasets import Dataset
-    train_ds = Dataset.from_pandas(train_df).map(tokenize_function, batched=True, remove_columns=["text"])
-    val_ds = Dataset.from_pandas(val_df).map(tokenize_function, batched=True, remove_columns=["text"])
+    train_ds = Dataset.from_pandas(train_df).map(tokenize_function, batched=True, remove_columns=["text", "label"])
+    val_ds = Dataset.from_pandas(val_df).map(tokenize_function, batched=True, remove_columns=["text", "label"])
     train_ds.set_format("torch")
     val_ds.set_format("torch")
 
@@ -197,7 +200,7 @@ def main():
         greater_is_better=True,
         report_to=["none"],
         seed=args.seed,
-        dataloader_num_workers=2,
+        dataloader_num_workers=0,
         remove_unused_columns=False,
         max_grad_norm=1.0,
         fp16=True,
