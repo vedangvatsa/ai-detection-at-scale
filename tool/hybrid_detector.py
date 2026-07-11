@@ -95,35 +95,81 @@ def predict_hybrid(text: str, register: str = "all") -> float:
     except Exception:
         bino = 0.95  # Neutral fallback
         
-    # 4. Extract semantic probability from quantized RoBERTa ONNX model or PyTorch fallback
-    roberta_prob = 0.5
+    # 4. Extract semantic probability using free SOTA Hugging Face serverless API (fallback to local ONNX)
+    roberta_prob = None
     try:
-        if _ort_session is not None:
-            inputs = _tokenizer(text, return_tensors="np", truncation=True, max_length=256, padding="max_length")
-            ort_inputs = {
-                "input_ids": inputs["input_ids"].astype(np.int64),
-                "attention_mask": inputs["attention_mask"].astype(np.int64)
-            }
-            logits = _ort_session.run(None, ort_inputs)[0]
-            # Softmax
-            exp_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
-            probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
-            roberta_prob = float(probs[0][1])
-        elif _pytorch_model is not None:
-            import torch
-            inputs = _tokenizer(text, return_tensors="pt", truncation=True, max_length=256, padding=True)
-            # Remove token_type_ids if present
-            inputs.pop('token_type_ids', None)
-            
-            with torch.no_grad():
-                outputs = _pytorch_model(**inputs)
-                logits = outputs.logits.cpu().numpy()
-            exp_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
-            probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
-            roberta_prob = float(probs[0][1])
+        # Load token
+        token = os.environ.get("HF_TOKEN")
+        if not token:
+            try:
+                env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+                if os.path.exists(env_path):
+                    with open(env_path) as f:
+                        for line in f:
+                            if '=' in line and not line.strip().startswith('#'):
+                                k, v = line.split('=', 1)
+                                if k.strip() == 'HF_TOKEN':
+                                    token = v.strip()
+                                    break
+            except Exception:
+                pass
+
+        if token:
+            from huggingface_hub import InferenceClient
+            # LLaMA 3.3 70B is SOTA and free on HF Inference router
+            client = InferenceClient(model="meta-llama/Llama-3.3-70B-Instruct", token=token)
+            system_prompt = (
+                "You are a SOTA AI text detection classifier. Analyze the text provided by the user. "
+                "Output ONLY a raw float probability between 0.0 and 1.0 (where 0.0 means definitely human-written, "
+                "and 1.0 means definitely AI-generated). Do not include any thinking, explanations, reasoning, or markdown. "
+                "Just output the float value."
+            )
+            res = client.chat_completion(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": text}
+                ],
+                max_tokens=10
+            )
+            resp_str = res.choices[0].message.content.strip()
+            # Extract float
+            import re
+            match = re.search(r"[-+]?\d*\.\d+|\d+", resp_str)
+            if match:
+                roberta_prob = float(match.group())
+                # Bound between 0 and 1
+                roberta_prob = max(0.0, min(1.0, roberta_prob))
     except Exception as e:
-        print(f"Error executing RoBERTa inference: {e}")
-        roberta_prob = 0.5
+        print(f"HF Inference API failed: {e}. Falling back to local ONNX.")
+        roberta_prob = None
+
+    if roberta_prob is None:
+        # Fall back to local quantized ONNX RoBERTa model
+        try:
+            if _ort_session is not None:
+                inputs = _tokenizer(text, return_tensors="np", truncation=True, max_length=256, padding="max_length")
+                ort_inputs = {
+                    "input_ids": inputs["input_ids"].astype(np.int64),
+                    "attention_mask": inputs["attention_mask"].astype(np.int64)
+                }
+                logits = _ort_session.run(None, ort_inputs)[0]
+                # Softmax
+                exp_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
+                probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
+                roberta_prob = float(probs[0][1])
+            elif _pytorch_model is not None:
+                import torch
+                inputs = _tokenizer(text, return_tensors="pt", truncation=True, max_length=256, padding=True)
+                inputs.pop('token_type_ids', None)
+                with torch.no_grad():
+                    outputs = _pytorch_model(**inputs)
+                    logits = outputs.logits.cpu().numpy()
+                exp_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
+                probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
+                roberta_prob = float(probs[0][1])
+        except Exception as e:
+            print(f"Error executing RoBERTa inference: {e}")
+            roberta_prob = 0.5
         
     # Select register ensembler
     ensembler = _ensemblers.get(register, _ensemblers.get('all'))

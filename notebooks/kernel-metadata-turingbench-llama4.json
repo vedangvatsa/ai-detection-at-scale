@@ -1,0 +1,13 @@
+{
+  "id": "vedangvatsa123/turingbench-llama4-scout-fine-tune",
+  "title": "TuringBench Llama4 Scout Fine-tune",
+  "code_file": "kaggle_turingbench_llama4_scout.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}

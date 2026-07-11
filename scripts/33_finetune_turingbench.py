@@ -68,6 +68,10 @@ def parse_args():
                         help="Apply class weights to the loss (default: True)")
     parser.add_argument("--no_class_weights", action="store_true",
                         help="Disable class weights")
+    parser.add_argument("--load_in_4bit", action="store_true",
+                         help="Load model in 4-bit quantization (essential for Llama-4 on T4)")
+    parser.add_argument("--load_in_8bit", action="store_true",
+                         help="Load model in 8-bit quantization")
     return parser.parse_args()
 
 
@@ -138,12 +142,55 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
+    
+    quantization_config = None
+    if args.load_in_4bit:
+        from transformers import BitsAndBytesConfig
+        import torch
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.float16
+        )
+        print("Using 4-bit BitsAndBytes quantization")
+    elif args.load_in_8bit:
+        from transformers import BitsAndBytesConfig
+        quantization_config = BitsAndBytesConfig(
+            load_in_8bit=True
+        )
+        print("Using 8-bit BitsAndBytes quantization")
+
     model = AutoModelForSequenceClassification.from_pretrained(
         args.model_name,
         num_labels=2,
         id2label={0: "human", 1: "ai"},
         label2id={"human": 0, "ai": 1},
+        quantization_config=quantization_config,
+        device_map="auto" if quantization_config is not None else None
     )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        model.config.pad_token_id = model.config.eos_token_id
+
+    # Auto-LoRA wrapping for modern 2025/2026-era larger models (e.g. Llama-4, Phi-4)
+    use_lora = any(n in args.model_name.lower() for n in ["llama-4", "phi-4", "scout", "maverick"])
+    if use_lora:
+        try:
+            from peft import LoraConfig, get_peft_model, TaskType
+            print(f"Wrapping model {args.model_name} with LoRA for memory-efficient training...")
+            peft_config = LoraConfig(
+                task_type=TaskType.SEQ_CLS,
+                inference_mode=False,
+                r=16,
+                lora_alpha=32,
+                lora_dropout=0.1,
+                target_modules=["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+            )
+            model = get_peft_model(model, peft_config)
+            model.print_trainable_parameters()
+        except ImportError:
+            print("PEFT/LoRA libraries not found. Attempting full fine-tuning.")
 
     is_deberta = "deberta-v" in args.model_name.lower()
     use_fp16 = args.fp16 and not args.no_fp16 and torch.cuda.is_available()
@@ -179,7 +226,10 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else
                           "mps" if torch.backends.mps.is_available() else "cpu")
     class_weights = class_weights.to(device)
-    model = model.to(device)
+    if quantization_config is None:
+        model = model.to(device)
+    else:
+        print("Model is loaded via bitsandbytes quantization; skipping manual device placement.")
 
     if use_grad_ckpt:
         model.gradient_checkpointing_enable()
