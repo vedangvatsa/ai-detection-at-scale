@@ -146,7 +146,6 @@ def main():
     quantization_config = None
     if args.load_in_4bit:
         from transformers import BitsAndBytesConfig
-        import torch
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
